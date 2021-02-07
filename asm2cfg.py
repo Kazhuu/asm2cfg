@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import re
 
@@ -131,7 +133,6 @@ def draw_cfg(function_name, basic_blocks):
             dot.edge(f'{basic_block.key}:s1', basic_block.jump_edge)
         elif basic_block.no_jump_edge:
             dot.edge(basic_block.key, basic_block.no_jump_edge)
-    print(dot.source)
     dot.render(filename=function_name, cleanup=True, format='pdf')
 
 
