@@ -75,7 +75,7 @@ Now you have the assembly file. Then time to turn that to CFG. Do that giving it
 to Python executable
 
 ```
-python asm2cfg test_function.asm
+python asm2cfg.py test_function.asm
 ```
 
 This will output `test_function.pdf` file in the same directory where the
