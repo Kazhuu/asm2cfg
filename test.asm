@@ -1,4 +1,4 @@
-Dump of assembler code for function atax_kernel1:
+Dump of assembler code for function test_function:
 => 0x00007ffff7fbf0e0 <+0>:	push   %rbp
    0x00007ffff7fbf0e1 <+1>:	push   %r15
    0x00007ffff7fbf0e3 <+3>:	push   %r14
@@ -21,11 +21,11 @@ Dump of assembler code for function atax_kernel1:
    0x00007ffff7fbf119 <+57>:	mov    %rdx,%rax
    0x00007ffff7fbf11c <+60>:	mov    %rax,-0x78(%rsp)
    0x00007ffff7fbf121 <+65>:	test   %rdx,%rdx
-   0x00007ffff7fbf124 <+68>:	jle    0x7ffff7fbf7c2 <atax_kernel1+1762>
+   0x00007ffff7fbf124 <+68>:	jle    0x7ffff7fbf7c2 <test_function+1762>
    0x00007ffff7fbf12a <+74>:	sub    %rbp,%rsi
    0x00007ffff7fbf12d <+77>:	mov    %rsi,%rax
    0x00007ffff7fbf130 <+80>:	test   %rsi,%rsi
-   0x00007ffff7fbf133 <+83>:	jle    0x7ffff7fbf7c2 <atax_kernel1+1762>
+   0x00007ffff7fbf133 <+83>:	jle    0x7ffff7fbf7c2 <test_function+1762>
    0x00007ffff7fbf139 <+89>:	mov    %rbp,-0x70(%rsp)
    0x00007ffff7fbf13e <+94>:	mov    (%rdi),%rcx
    0x00007ffff7fbf141 <+97>:	mov    %rcx,-0x80(%rsp)
@@ -39,7 +39,7 @@ Dump of assembler code for function atax_kernel1:
    0x00007ffff7fbf15f <+127>:	mov    %rax,-0x68(%rsp)
    0x00007ffff7fbf164 <+132>:	mov    %rcx,-0x38(%rsp)
    0x00007ffff7fbf169 <+137>:	test   %rcx,%rcx
-   0x00007ffff7fbf16c <+140>:	je     0x7ffff7fbf660 <atax_kernel1+1408>
+   0x00007ffff7fbf16c <+140>:	je     0x7ffff7fbf660 <test_function+1408>
    0x00007ffff7fbf172 <+146>:	mov    -0x78(%rsp),%r11
    0x00007ffff7fbf177 <+151>:	vmovd  %r11d,%xmm0
    0x00007ffff7fbf17c <+156>:	vpbroadcastd %xmm0,%ymm0
@@ -95,9 +95,9 @@ Dump of assembler code for function atax_kernel1:
    0x00007ffff7fbf257 <+375>:	mov    %r9,-0x20(%rsp)
    0x00007ffff7fbf25c <+380>:	mov    %rbx,-0x28(%rsp)
    0x00007ffff7fbf261 <+385>:	mov    %r14,-0x30(%rsp)
-   0x00007ffff7fbf266 <+390>:	jae    0x7ffff7fbf270 <atax_kernel1+400>
+   0x00007ffff7fbf266 <+390>:	jae    0x7ffff7fbf270 <test_function+400>
    0x00007ffff7fbf268 <+392>:	xor    %r12d,%r12d
-   0x00007ffff7fbf26b <+395>:	jmp    0x7ffff7fbf55d <atax_kernel1+1149>
+   0x00007ffff7fbf26b <+395>:	jmp    0x7ffff7fbf55d <test_function+1149>
    0x00007ffff7fbf270 <+400>:	vmovups (%rdi,%rbp,4),%ymm2
    0x00007ffff7fbf275 <+405>:	mov    %rbx,%rdx
    0x00007ffff7fbf278 <+408>:	mov    -0x60(%rsp),%rbx
@@ -210,10 +210,10 @@ Dump of assembler code for function atax_kernel1:
    0x00007ffff7fbf54b <+1131>:	vmovups %ymm2,(%rdi,%rbp,4)
    0x00007ffff7fbf550 <+1136>:	add    $0x8,%r12
    0x00007ffff7fbf554 <+1140>:	cmp    %r12,%r11
-   0x00007ffff7fbf557 <+1143>:	jne    0x7ffff7fbf2b0 <atax_kernel1+464>
+   0x00007ffff7fbf557 <+1143>:	jne    0x7ffff7fbf2b0 <test_function+464>
    0x00007ffff7fbf55d <+1149>:	mov    -0x58(%rsp),%r11
    0x00007ffff7fbf562 <+1154>:	test   %r11,%r11
-   0x00007ffff7fbf565 <+1157>:	je     0x7ffff7fbf635 <atax_kernel1+1365>
+   0x00007ffff7fbf565 <+1157>:	je     0x7ffff7fbf635 <test_function+1365>
    0x00007ffff7fbf56b <+1163>:	vmovups (%rdi,%rbp,4),%ymm2
    0x00007ffff7fbf570 <+1168>:	lea    (%rsi,%r12,4),%r8
    0x00007ffff7fbf574 <+1172>:	add    %r12,%rax
@@ -256,7 +256,7 @@ Dump of assembler code for function atax_kernel1:
    0x00007ffff7fbf627 <+1351>:	vmovups %ymm2,(%rdi,%rbp,4)
    0x00007ffff7fbf62c <+1356>:	add    $0x1,%rdx
    0x00007ffff7fbf630 <+1360>:	cmp    %rdx,%r11
-   0x00007ffff7fbf633 <+1363>:	jne    0x7ffff7fbf5e0 <atax_kernel1+1280>
+   0x00007ffff7fbf633 <+1363>:	jne    0x7ffff7fbf5e0 <test_function+1280>
    0x00007ffff7fbf635 <+1365>:	mov    0x10(%rsp),%rcx
    0x00007ffff7fbf63a <+1370>:	add    $0x1,%rcx
    0x00007ffff7fbf63e <+1374>:	mov    0x8(%rsp),%rdx
@@ -265,10 +265,10 @@ Dump of assembler code for function atax_kernel1:
    0x00007ffff7fbf64b <+1387>:	cmp    -0x38(%rsp),%rcx
    0x00007ffff7fbf650 <+1392>:	mov    -0x40(%rsp),%r12
    0x00007ffff7fbf655 <+1397>:	mov    -0x50(%rsp),%r11
-   0x00007ffff7fbf65a <+1402>:	jne    0x7ffff7fbf1f0 <atax_kernel1+272>
+   0x00007ffff7fbf65a <+1402>:	jne    0x7ffff7fbf1f0 <test_function+272>
    0x00007ffff7fbf660 <+1408>:	cmpq   $0x0,-0x68(%rsp)
    0x00007ffff7fbf666 <+1414>:	mov    -0x70(%rsp),%rax
-   0x00007ffff7fbf66b <+1419>:	je     0x7ffff7fbf7c2 <atax_kernel1+1762>
+   0x00007ffff7fbf66b <+1419>:	je     0x7ffff7fbf7c2 <test_function+1762>
    0x00007ffff7fbf671 <+1425>:	add    %rax,%r12
    0x00007ffff7fbf674 <+1428>:	mov    -0x78(%rsp),%rcx
    0x00007ffff7fbf679 <+1433>:	mov    %ecx,%eax
@@ -285,11 +285,11 @@ Dump of assembler code for function atax_kernel1:
    0x00007ffff7fbf6a0 <+1472>:	movslq %r11d,%r10
    0x00007ffff7fbf6a3 <+1475>:	movslq %r12d,%rcx
    0x00007ffff7fbf6a6 <+1478>:	cmp    $0x7,%r9
-   0x00007ffff7fbf6aa <+1482>:	jae    0x7ffff7fbf6c0 <atax_kernel1+1504>
+   0x00007ffff7fbf6aa <+1482>:	jae    0x7ffff7fbf6c0 <test_function+1504>
    0x00007ffff7fbf6ac <+1484>:	xor    %ebx,%ebx
    0x00007ffff7fbf6ae <+1486>:	test   %rax,%rax
-   0x00007ffff7fbf6b1 <+1489>:	jne    0x7ffff7fbf771 <atax_kernel1+1681>
-   0x00007ffff7fbf6b7 <+1495>:	jmp    0x7ffff7fbf7aa <atax_kernel1+1738>
+   0x00007ffff7fbf6b1 <+1489>:	jne    0x7ffff7fbf771 <test_function+1681>
+   0x00007ffff7fbf6b7 <+1495>:	jmp    0x7ffff7fbf7aa <test_function+1738>
    0x00007ffff7fbf6bc <+1500>:	nopl   0x0(%rax)
    0x00007ffff7fbf6c0 <+1504>:	lea    (%r8,%r10,4),%rbp
    0x00007ffff7fbf6c4 <+1508>:	vmovss (%rdi,%rcx,4),%xmm0
@@ -321,9 +321,9 @@ Dump of assembler code for function atax_kernel1:
    0x00007ffff7fbf75a <+1658>:	vmovss %xmm0,(%rdi,%rcx,4)
    0x00007ffff7fbf75f <+1663>:	add    $0x8,%rbx
    0x00007ffff7fbf763 <+1667>:	cmp    %rbx,%r15
-   0x00007ffff7fbf766 <+1670>:	jne    0x7ffff7fbf6d0 <atax_kernel1+1520>
+   0x00007ffff7fbf766 <+1670>:	jne    0x7ffff7fbf6d0 <test_function+1520>
    0x00007ffff7fbf76c <+1676>:	test   %rax,%rax
-   0x00007ffff7fbf76f <+1679>:	je     0x7ffff7fbf7aa <atax_kernel1+1738>
+   0x00007ffff7fbf76f <+1679>:	je     0x7ffff7fbf7aa <test_function+1738>
    0x00007ffff7fbf771 <+1681>:	vmovss (%rdi,%rcx,4),%xmm0
    0x00007ffff7fbf776 <+1686>:	lea    (%rsi,%rbx,4),%rbp
    0x00007ffff7fbf77a <+1690>:	add    %rbx,%r10
@@ -336,12 +336,12 @@ Dump of assembler code for function atax_kernel1:
    0x00007ffff7fbf79c <+1724>:	vmovss %xmm0,(%rdi,%rcx,4)
    0x00007ffff7fbf7a1 <+1729>:	add    $0x1,%rdx
    0x00007ffff7fbf7a5 <+1733>:	cmp    %rdx,%rax
-   0x00007ffff7fbf7a8 <+1736>:	jne    0x7ffff7fbf790 <atax_kernel1+1712>
+   0x00007ffff7fbf7a8 <+1736>:	jne    0x7ffff7fbf790 <test_function+1712>
    0x00007ffff7fbf7aa <+1738>:	add    $0x1,%r14
    0x00007ffff7fbf7ae <+1742>:	add    $0x1,%r12
    0x00007ffff7fbf7b2 <+1746>:	add    -0x78(%rsp),%r11d
    0x00007ffff7fbf7b7 <+1751>:	cmp    -0x68(%rsp),%r14
-   0x00007ffff7fbf7bc <+1756>:	jne    0x7ffff7fbf6a0 <atax_kernel1+1472>
+   0x00007ffff7fbf7bc <+1756>:	jne    0x7ffff7fbf6a0 <test_function+1472>
    0x00007ffff7fbf7c2 <+1762>:	add    $0x18,%rsp
    0x00007ffff7fbf7c6 <+1766>:	pop    %rbx
    0x00007ffff7fbf7c7 <+1767>:	pop    %r12

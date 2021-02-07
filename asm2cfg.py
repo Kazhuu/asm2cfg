@@ -9,26 +9,28 @@ class BasicBlock:
     def __init__(self, key):
         self.key = key
         self.instructions = []
-        self.edges = []
+        self.jump_edge = None
+        self.no_jump_edge = None
 
     def add_instruction(self, instruction):
         self.instructions.append(self._escape(instruction))
 
-    def add_edge(self, basic_block_key):
+    def add_jump_edge(self, basic_block_key):
         if isinstance(basic_block_key, BasicBlock):
-            self.edges.append(basic_block_key.key)
+            self.jump_edge = basic_block_key.key
         else:
-            self.edges.append(basic_block_key)
+            self.jump_edge = basic_block_key
 
-    def get_edges(self):
-        edges = []
-        for index, key in enumerate(self.edges):
-            edges.append(f'{key}')
-        return edges
+    def add_no_jump_edge(self, basic_block_key):
+        if isinstance(basic_block_key, BasicBlock):
+            self.no_jump_edge = basic_block_key.key
+        else:
+            self.no_jump_edge = basic_block_key
 
     def get_label(self):
         label = r'\l'.join(self.instructions)
-        if self.edges:
+        if self.jump_edge:
+            assert(self.no_jump_edge is not None)
             label += '|{<s0>No Jump|<s1>Jump}'
         return '{' + label + '}'
 
@@ -91,18 +93,20 @@ def parse_lines(lines):
             if current_basic_block is None:
                 current_basic_block = BasicBlock(program_point)
                 current_basic_block.add_instruction(instruction)
+                # Previous basic block ended in jump instruction. Add the basic
+                # block what follows if the jump was not taken.
                 if previous_jump_block is not None:
-                    previous_jump_block.add_edge(current_basic_block)
+                    previous_jump_block.add_no_jump_edge(current_basic_block)
                     previous_jump_block = None
             elif program_point in jump_destinations:
                 temp_block = current_basic_block
                 basic_blocks[current_basic_block.key] = current_basic_block
                 current_basic_block = BasicBlock(program_point)
                 current_basic_block.add_instruction(instruction)
-                temp_block.add_edge(current_basic_block)
+                temp_block.add_no_jump_edge(current_basic_block)
             elif program_point in branch_points:
                 current_basic_block.add_instruction(instruction)
-                current_basic_block.add_edge(jump_table[program_point])
+                current_basic_block.add_jump_edge(jump_table[program_point])
                 basic_blocks[current_basic_block.key] = current_basic_block
                 previous_jump_block = current_basic_block
                 current_basic_block = None
@@ -117,15 +121,18 @@ def parse_lines(lines):
 
 
 def draw_cfg(function_name, basic_blocks):
-    dot = Digraph(comment=function_name, engine='dot', format='pdf')
+    dot = Digraph(name=function_name, comment=function_name, engine='dot')
+    dot.attr('graph', label=function_name)
     for key, basic_block in basic_blocks.items():
         dot.node(key, shape='record', label=basic_block.get_label())
     for basic_block in basic_blocks.values():
-        for edge_to_key in basic_block.get_edges():
-            dot.edge(basic_block.key, edge_to_key)
-    # dot.save(function_name)
+        if basic_block.jump_edge:
+            dot.edge(f'{basic_block.key}:s0', basic_block.no_jump_edge)
+            dot.edge(f'{basic_block.key}:s1', basic_block.jump_edge)
+        elif basic_block.no_jump_edge:
+            dot.edge(basic_block.key, basic_block.no_jump_edge)
     print(dot.source)
-    dot.view()
+    dot.render(filename=function_name, cleanup=True, format='pdf')
 
 
 def main():
