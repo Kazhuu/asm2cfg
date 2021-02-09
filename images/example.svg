@@ -14,7 +14,10 @@
    version="1.1"
    id="svg8"
    inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07, custom)"
-   sodipodi:docname="example.svg">
+   sodipodi:docname="example.svg"
+   inkscape:export-filename="/home/kazooie/programming/asm2cfg/images/example.png"
+   inkscape:export-xdpi="80"
+   inkscape:export-ydpi="80">
   <defs
      id="defs2">
     <clipPath
@@ -48,7 +51,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.98994949"
-     inkscape:cx="220.56573"
+     inkscape:cx="217.53527"
      inkscape:cy="446.05287"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
@@ -77,7 +80,9 @@
      id="layer1">
     <g
        id="g920"
-       transform="matrix(0.65992386,0,0,0.65992386,76.155901,42.723318)">
+       transform="matrix(0.48540145,0,0,0.48540145,81.6332,33.905995)"
+       inkscape:export-xdpi="100"
+       inkscape:export-ydpi="100">
       <image
          width="579.17291"
          height="357.98126"
