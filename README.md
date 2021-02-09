@@ -5,7 +5,7 @@ graphs (CFG). Program doesn't care about the assembly language. Python will just
 read the jump addresses and instructions to determine the control flow from
 that.
 
-![example](./images/example.jpg?raw=true "Assembly to CFG")
+![example](./images/example.png?raw=true "Assembly to CFG")
 
 Repository includes example `test_function.asm` assembly file and example output
 control-flow graph pdf `test_function.pdf`.
