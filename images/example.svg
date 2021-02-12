@@ -16,8 +16,8 @@
    inkscape:version="1.0.2 (e86c870879, 2021-01-15)"
    sodipodi:docname="example.svg"
    inkscape:export-filename="/home/kazooie/programming/asm2cfg/images/example.png"
-   inkscape:export-xdpi="80"
-   inkscape:export-ydpi="80">
+   inkscape:export-xdpi="94"
+   inkscape:export-ydpi="94">
   <defs
      id="defs2">
     <clipPath
@@ -74,7 +74,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
