@@ -3,12 +3,17 @@
 Python command-line tool to turn GDB disassembled function dumps to control-flow
 graphs (CFG). Program doesn't care about the assembly language. Python will just
 read the jump addresses and instructions to determine the control flow from
-that.
+that. Support for both stripped and non-stripped assembly dumps. Tested with x86
+assembly. Hopefully works with other assembly too, if not please open an issue
+or submit a PR.
 
 ![example](./images/example.png?raw=true "Assembly to CFG")
 
-Repository includes example `test_function.asm` assembly file and example output
-control-flow graph pdf `test_function.pdf`.
+Repository includes example `test_function.asm` for non-stripped assembly file
+and corresponding output CFG `test_function.pdf`. Also file
+`stripped_function.asm` contains example stripped function and corresponding
+output file `0x555555555faf-0x555555557008.pdf`. Notice in case of stripped the
+function name is unknown.
 
 ## Prerequisites
 
@@ -81,4 +86,5 @@ python asm2cfg.py test_function.asm
 ```
 
 This will output `test_function.pdf` file in the same directory where the
-executable was ran.
+executable was ran. If the assembly file is stripped then function memory range
+is used as a name instead. For example `0x555555555faf-0x555555557008.pdf`.

@@ -7,6 +7,10 @@ from graphviz import Digraph
 
 
 class BasicBlock:
+    """
+    Class to represent a node in CFG with straight lines of code without jump
+    or calls instructions.
+    """
 
     def __init__(self, key):
         self.key = key
@@ -15,22 +19,37 @@ class BasicBlock:
         self.no_jump_edge = None
 
     def add_instruction(self, instruction):
+        """
+        Add instruction to this block.
+        """
         self.instructions.append(self._escape(instruction))
 
     def add_jump_edge(self, basic_block_key):
+        """
+        Add jump target block to this block.
+        """
         if isinstance(basic_block_key, BasicBlock):
             self.jump_edge = basic_block_key.key
         else:
             self.jump_edge = basic_block_key
 
     def add_no_jump_edge(self, basic_block_key):
+        """
+        Add no jump target block to this block.
+        """
         if isinstance(basic_block_key, BasicBlock):
             self.no_jump_edge = basic_block_key.key
         else:
             self.no_jump_edge = basic_block_key
 
     def get_label(self):
+        """
+        Return content of the block for dot graph.
+        """
+        # Left align in dot.
         label = r'\l'.join(self.instructions)
+        # Left justify the last line too.
+        label += r'\l'
         if self.jump_edge:
             assert(self.no_jump_edge is not None)
             label += '|{<s0>No Jump|<s1>Jump}'
@@ -51,6 +70,15 @@ class BasicBlock:
         return instruction
 
 
+def print_assembly(basic_blocks):
+    """
+    Debug function to print the assembly.
+    """
+    for basic_block in basic_blocks.values():
+        print(basic_block)
+        print()
+
+
 def read_lines(file_path):
     lines = []
     with open(file_path, 'r') as asm_file:
@@ -58,21 +86,67 @@ def read_lines(file_path):
     return lines
 
 
-def get_function_name(line):
-    function_start_pattern = re.compile(r'(\w+):$')
-    function_name = function_start_pattern.search(line)
-    if function_name is None:
-        print('First line of the file does not contain a function name')
+def get_stripped_and_function_name(line):
+    """
+    Return function name of memory range from the given string line. Return
+    tuple where first element contains information is the binary stripped or
+    not and second element is the function name.
+
+    Match lines for non-stripped binary:
+    'Dump of assembler code for function test_function:'
+    and lines for stripped binary:
+    'Dump of assembler code from 0x555555555faf to 0x555555557008:'
+    """
+    function_name_pattern = re.compile(r'function (\w+):$')
+    memory_range_pattern = re.compile(r'from (0x[0-9a-fA-F]+) to (0x[0-9a-fA-F]+):$')
+    function_name = function_name_pattern.search(line)
+    memory_range = memory_range_pattern.search(line)
+    if function_name is None and memory_range is None:
+        print('First line of the file does not contain a function name or valid memory range')
         exit(1)
-    return function_name[1]
+    if function_name is None:
+        return [True, f'{memory_range[1]}-{memory_range[2]}']
+    return [False, function_name[1]]
+
+
+def get_jump_pattern(stripped, function_name):
+    """
+    Return regexp pattern used to identify jump/call assembly lines. Support
+    for stripped and non-stripped versions.
+
+    Need to match non-stripped lines:
+    '0x00007ffff7fbf124 <+68>:  jmp  0x7ffff7fbf7c2 <test_function+1762>'
+    and stripped lines:
+    '0x000055555555600f:        jmp  0x55555555603d'
+    """
+    if stripped:
+        return re.compile(r'0x0*([01-9a-fA-F]+):\W+\w+\W+0x0*([01-9a-fA-F]+)$')
+    return re.compile(fr'<\+(\d+)>:.+<{function_name}\+(\d+)>')
+
+
+def get_assembly_line_pattern(stripped):
+    """
+    Return regexp pattern used for matching regular assembly lines in the file.
+    Support for stripped and non-stripped versions.
+
+    Need to match non-stripped lines:
+    '0x00007ffff7fbf158 <+120>: and  $0xfffffffffffffff8,%r12'
+    and stripped lines:
+    '0x000055555555602a:        mov  rax,QWORD PTR [rip+0x311f]  # 0x555555559150'
+    """
+    if stripped:
+        return re.compile(r'0x0*([0-9a-fA-F]+):\W+(.+)$')
+    return re.compile(r'<\+(\d+)>:\W+(.+)$')
 
 
 def parse_lines(lines):
-    function_name = get_function_name(lines[0])
+    stripped, function_name = get_stripped_and_function_name(lines[0])
     branch_points = set()
     jump_table = {}
     jump_destinations = set()
-    jump_pattern = re.compile(fr'<\+(\d+)>:.+<{function_name}\+(\d+)>')
+    jump_pattern = get_jump_pattern(stripped, function_name)
+
+    # Iterate over the lines and collect jump targets and branching points.
     for line in lines[1:-1]:
         match = jump_pattern.search(line)
         if match is not None:
@@ -83,7 +157,9 @@ def parse_lines(lines):
             jump_table[branch_point] = jump_point
             jump_destinations.add(jump_point)
 
-    line_pattern = re.compile(r'<\+(\d+)>:[\t\s]+(\b.+)')
+    # Now iterate over the assembly again and split it to basic blocks using
+    # the jump information from earlier.
+    line_pattern = get_assembly_line_pattern(stripped)
     basic_blocks = {}
     current_basic_block = None
     previous_jump_block = None
@@ -117,6 +193,7 @@ def parse_lines(lines):
         else:
             print(f'unsupported line: {line}')
             exit(1)
+
     # Add the last basic block from end of the function.
     basic_blocks[current_basic_block.key] = current_basic_block
     return [function_name, basic_blocks]
