@@ -19,7 +19,7 @@ any suggestions or improvements. Please open an issue or file a pull request.
 
 * [Prerequisites](#prerequisites)
 * [Usage From GDB](#usage-from-gdb)
-* [Usge as Standalone](#usge-as-standalone)
+* [Usage as Standalone](#usage-as-standalone)
   * [Disassembly Function](#disassembly-function)
   * [Draw CFG](#draw-cfg)
 * [Test Files](#test-files)
@@ -89,7 +89,7 @@ skipcalls on` and then run earlier command again. Note that if function is long
 and has a lot of jumps inside itself, then rendering is still gonna take a long
 time. To have normal behavior again run `set skipcalls off`.
 
-## Usge as Standalone
+## Usage as Standalone
 
 `asm2cfg.py` can also be used as standalone Python program with same
 functionality as from GDB with external files. To make this easier for you you
