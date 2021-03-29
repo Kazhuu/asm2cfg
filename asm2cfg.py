@@ -272,9 +272,16 @@ def draw_cfg(function_name, basic_blocks, view):
 
 if from_gdb:
     class SkipCalls(gdb.Parameter):
+        """
+        Set \'on\' to prevent function calls from splitting assembly to further
+        blocks. This will provide speedup when rendering CFG if function is
+        big. Current value:"""
+
         def __init__(self):
             super(SkipCalls, self).__init__('skipcalls', gdb.COMMAND_DATA, gdb.PARAM_BOOLEAN)
             self.value = False
+            self.set_doc = SkipCalls.__doc__
+            self.show_doc = SkipCalls.__doc__
 
     class ViewCfg(gdb.Command):
         """
