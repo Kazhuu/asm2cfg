@@ -18,28 +18,26 @@ or improvements. Please open an issue or create a pull request.
 
 <!-- vim-markdown-toc GFM -->
 
-* [Prerequisites](#prerequisites)
+* [Install](#install)
 * [Usage From GDB](#usage-from-gdb)
 * [Usage as Standalone](#usage-as-standalone)
   * [Disassembly Function](#disassembly-function)
   * [Draw CFG](#draw-cfg)
-* [Test Files](#test-files)
+* [Examples](#examples)
 
 <!-- vim-markdown-toc -->
 
-## Prerequisites
+## Install
 
-Python 3 is required. If you are using Ubuntu use `pip3` and `python3` commands
-instead. Only Python package needed is graphviz. Install it with following.
+Project can be installed with pip
 
 ```
-pip install graphviz
+pip install asm2cfg
 ```
 
-To view dot files external dot viewer is required. For this purpose
-[xdot](https://pypi.org/project/xdot/) can
-be used for example. Any other dot viewer will also do. To install this on
-Debian based distro run
+To be able to view the dot files. External dot viewer is required. For this
+purpose [xdot](https://pypi.org/project/xdot/) can be used for example. Any
+other dot viewer will also do. To install this on Debian based distro run
 
 ```
 sudo apt install xdot
@@ -51,16 +49,24 @@ Or Arch based
 sudo pacman -S xdot
 ```
 
-Then source `asm2cfg.py` file from this repository to your GDB setup. This makes
-it available automatically when you start GDB. To do that make `.gdbinit` file
-to your home directory if not already there and place following line it and
-modify the path to point to this repository.
+To add extension to GDB you need to source the pip installed plugin to it. To
+find where pip placed GDB extension run `which gdb_asm2cfg` or in case if you
+use pyenv use `pyenv which gdb_asm2cfg`. Copy the path to the clipboard.
+
+Then in you home directory if not already add `.gdbinit` file
+and place following line in it and replace path from the earlier step.
 
 ```
-source <path-to-this-repo>/asm2cfg.py
+source <path-from-earlier>
 ```
 
-Now when you start GDB you are ready to go.
+For example in my Linux machine line end up to be
+
+```
+source ~/.local/bin/gdb_asm2cfg.py
+```
+
+Now when you start GDB no errors should be displayed and you are ready to go.
 
 ## Usage From GDB
 
@@ -92,18 +98,11 @@ time. To have normal behavior again run `set skipcalls off`.
 
 ## Usage as Standalone
 
-`asm2cfg.py` can also be used as standalone Python program with same
-functionality as from GDB with external files. To make this easier for you you
-can symlink it to you path first with
+Pip will install `asm2cfg` command-line tool that can be used as a standalone
+program with the same functionality as from GDB but with external files.
 
-```
-ln -s <path-to-this-repo> <path-to-your-path-folder>
-```
-
-For example `ln -s ~/asm2cfg/asm2cfg.py ~/.local/bin/`.
-
-Run `asm2cfg.py -h` to view the help text of how to use. To use as standalone
-script you first need to dump assembly from GDB to the file.
+To use as standalone script you first need to dump assembly from GDB to the file
+which is explained below.
 
 ### Disassembly Function
 
@@ -159,25 +158,28 @@ pipe disassemble | tee <filename>.asm
 
 ### Draw CFG
 
-Now you have the assembly file. Then time to turn that to CFG. Do that giving it
-to Python executable
+Now you have the assembly file. Time to turn that to CFG. Do that by giving it
+to `asm2cfg` like so
 
 ```
-python asm2cfg.py test_function.asm
+asm2cfg test_function.asm
 ```
 
 This will output `test_function.pdf` file in the same directory where the
-executable was ran. If the assembly file is stripped then function memory range
-is used as a name instead. For example `0x555555555faf-0x555555557008.pdf`.
+executable was ran. If the assembly file is stripped then the function memory
+range is used as a name instead. For example
+`0x555555555faf-0x555555557008.pdf`.
 
 To view CFG instead of saving provide `-v` flag. And to skip function calls from
-splitting the code to further blocks provide `-c` flag.
+splitting the code to further blocks provide `-c` flag. To show the help use
+`-h`.
 
-## Test Files
+## Examples
 
 Repository includes examples which can be used to test the standalone
 functionality. File `test_function.asm` is non-stripped assembly file and its
 corresponding output `test_function.pdf`. File `stripped_function.asm` contains
 stripped function and its corresponding output
 `0x555555555faf-0x555555557008.pdf`. File `huge.asm` is a large stripped
-assembly function its corresponding output `main.pdf`.
+assembly function and its corresponding output `main.pdf`. This can be used to
+test processing time of big functions.
