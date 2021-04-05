@@ -1,18 +1,7 @@
-#!/usr/bin/env python3
-
-import argparse
 import re
 import tempfile
-import traceback
 
 from graphviz import Digraph
-
-from_gdb = False
-try:
-    import gdb
-    from_gdb = True
-except ImportError:
-    from_gdb = False
 
 
 class BasicBlock:
@@ -263,87 +252,8 @@ def draw_cfg(function_name, basic_blocks, view):
         dot.format = 'gv'
         filename = tempfile.NamedTemporaryFile(mode='w+b', prefix=function_name)
         dot.view(filename.name)
-        print('Opening a file {0}.{1} with default viewer. Don\'t forget to delete it later.'.format(filename.name, dot.format))
+        print(f'Opening a file {filename.name}.{dot.format} with default viewer. Don\'t forget to delete it later.')
     else:
         dot.format = 'pdf'
         dot.render(filename=function_name, cleanup=True)
-        print('Saved CFG to a file {0}.{1}'.format(function_name, dot.format))
-
-
-if from_gdb:
-    class SkipCalls(gdb.Parameter):
-        """
-        Set \'on\' to prevent function calls from splitting assembly to further
-        blocks. This will provide speedup when rendering CFG if function is
-        big. Current value:"""
-
-        def __init__(self):
-            super(SkipCalls, self).__init__('skipcalls', gdb.COMMAND_DATA, gdb.PARAM_BOOLEAN)
-            self.value = False
-            self.set_doc = SkipCalls.__doc__
-            self.show_doc = SkipCalls.__doc__
-
-    class ViewCfg(gdb.Command):
-        """
-        Draw an assembly control-flow graph (CFG) of the currently executed
-        function. If function is big and CFG rendering takes too long, try to
-        skip function calls from splitting the code with 'set skipcalls on'. Or
-        save the graph with 'savecfg' command and view it with other program.'
-        """
-
-        def __init__(self):
-            super(ViewCfg, self).__init__('viewcfg', gdb.COMMAND_USER)
-
-        def invoke(self, arg, from_tty):
-            try:
-                assembly_lines = gdb.execute('disassemble', from_tty=False, to_string=True).split('\n')
-                [function_name, basic_blocks] = parse_lines(assembly_lines, gdb.parameter('skipcalls'))
-                draw_cfg(function_name, basic_blocks, view=True)
-            except Exception as e:
-                traceback.print_exc()
-                raise gdb.GdbError(e)
-
-        def _get_assembly_lines(self):
-            return gdb.execute('disassemble', from_tty=False, to_string=True)
-
-    class SaveCfg(gdb.Command):
-        """
-        Save an assembly control-flow graph (CFG) of the currently executed
-        function. If function is big and CFG rendering takes too long, try to
-        skip function calls from splitting the code with 'set skipcalls on'.
-        """
-
-        def __init__(self):
-            super(SaveCfg, self).__init__('savecfg', gdb.COMMAND_USER)
-
-        def invoke(self, arg, from_tty):
-            try:
-                assembly_lines = gdb.execute('disassemble', from_tty=False, to_string=True).split('\n')
-                [function_name, basic_blocks] = parse_lines(assembly_lines, gdb.parameter('skipcalls'))
-                draw_cfg(function_name, basic_blocks)
-            except Exception as e:
-                traceback.print_exc()
-                raise gdb.GdbError(e)
-
-    SkipCalls()
-    ViewCfg()
-    SaveCfg()
-else:
-    def main():
-        parser = argparse.ArgumentParser(
-            description='Program to draw dot control-flow graph from GDB disassembly for a function.',
-            epilog='If function CFG rendering takes too long, try to skip function calls with -c flag.'
-        )
-        parser.add_argument('assembly_file',
-                            help='File to contain one function assembly dump')
-        parser.add_argument('-c', '--skip-calls', action='store_true',
-                            help='Skip function calls from dividing code to blocks')
-        parser.add_argument('-v', '--view', action='store_true',
-                            help='View as a dot graph instead of saving to a file')
-        args = parser.parse_args()
-        print('If function CFG rendering takes too long, try to skip function calls with -c flag')
-        lines = read_lines(args.assembly_file)
-        [function_name, basic_blocks] = parse_lines(lines, args.skip_calls)
-        draw_cfg(function_name, basic_blocks, args.view)
-
-    main()
+        print(f'Saved CFG to a file {function_name}.{dot.format}')

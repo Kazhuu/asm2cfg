@@ -2,16 +2,17 @@
 
 GDB Python extension to view and save GDB disassembled function control-flow
 graphs (CFG) with simple commands straight from GDB session. To view CFG use
-`viewcfg` command and to save it to file use `savecfg` command.
+`viewcfg` command and to save it to a file use `savecfg` command.
 
-![example](./images/example.png?raw=true "Assembly to CFG")
+<p align="center">
+  <img src="https://github.com/Kazhuu/asm2cfg/blob/main/images/example.png?raw=true" />
+</p>
 
 Program doesn't care about the assembly language. Python will just read the jump
 addresses and instructions to determine the control flow from that. Support for
-both stripped and non-stripped assembly dumps. Programmed and tested with x86
-assembly. So not sure does this work with other assembly languages. If you have
-any suggestions or improvements. Please open an issue or file a pull request.
-
+both stripped and non-stripped assembly dumps. Tested with x86 assembly. So not
+sure does this work with other assembly languages. If you have any suggestions
+or improvements. Please open an issue or create a pull request.
 
 ## Table of Content
 
