@@ -49,8 +49,10 @@ class BasicBlock:
         # Left justify the last line too.
         label += r'\l'
         if self.jump_edge:
-            assert(self.no_jump_edge is not None)
-            label += '|{<s0>No Jump|<s1>Jump}'
+            if self.no_jump_edge:
+                label += '|{<s0>No Jump|<s1>Jump}'
+            else:
+                label += '|{<s1>Jump}'
         return '{' + label + '}'
 
     def __str__(self):
@@ -138,6 +140,13 @@ def get_jump_pattern(stripped, function_name):
     return re.compile(fr'<\+(\d+)>:.+<{function_name}\+(\d+)>')
 
 
+def get_unconditional_branch_pattern(stripped):
+    """
+    Return regexp pattern used to identify unconditional jumps.
+    """
+    return re.compile(r'jmpq?\b')
+
+
 def get_assembly_line_pattern(stripped):
     """
     Return regexp pattern used for matching regular assembly lines in the file.
@@ -162,6 +171,7 @@ def parse_lines(lines, skip_calls):
     jump_destinations = set()
     call_pattern = get_call_pattern(stripped)
     jump_pattern = get_jump_pattern(stripped, function_name)
+    uncond_jump_pattern = get_unconditional_branch_pattern(stripped)
 
     # Iterate over the lines and collect jump targets and branching points.
     for line in lines[1:-1]:
@@ -173,7 +183,8 @@ def parse_lines(lines, skip_calls):
         if match is not None:
             branch_point = match[1]
             jump_point = match[2]
-            jump_table[branch_point] = jump_point
+            is_unconditional = bool(uncond_jump_pattern.search(line))
+            jump_table[branch_point] = jump_point, is_unconditional
             jump_destinations.add(jump_point)
 
     # Now iterate over the assembly again and split it to basic blocks using
@@ -200,9 +211,10 @@ def parse_lines(lines, skip_calls):
                 # If this block only contains jump/call instruction then we
                 # need immediately create a new basic block.
                 if program_point in jump_table:
-                    current_basic_block.add_jump_edge(jump_table[program_point])
+                    jump_point, is_unconditional = jump_table[program_point]
+                    current_basic_block.add_jump_edge(jump_point)
                     basic_blocks[current_basic_block.key] = current_basic_block
-                    previous_jump_block = current_basic_block
+                    previous_jump_block = None if is_unconditional else current_basic_block
                     current_basic_block = None
             elif program_point in jump_destinations:
                 temp_block = current_basic_block
@@ -211,10 +223,11 @@ def parse_lines(lines, skip_calls):
                 current_basic_block.add_instruction(instruction)
                 temp_block.add_no_jump_edge(current_basic_block)
             elif program_point in jump_table:
+                jump_point, is_unconditional = jump_table[program_point]
                 current_basic_block.add_instruction(instruction)
-                current_basic_block.add_jump_edge(jump_table[program_point])
+                current_basic_block.add_jump_edge(jump_point)
                 basic_blocks[current_basic_block.key] = current_basic_block
-                previous_jump_block = current_basic_block
+                previous_jump_block = None if is_unconditional else current_basic_block
                 current_basic_block = None
             else:
                 current_basic_block.add_instruction(instruction)
@@ -232,7 +245,8 @@ def parse_lines(lines, skip_calls):
         # block to designate end of the function.
         end_block = BasicBlock('end_of_function')
         end_block.add_instruction('end of function')
-        previous_jump_block.add_no_jump_edge(end_block.key)
+        if previous_jump_block is not None:
+            previous_jump_block.add_no_jump_edge(end_block.key)
         basic_blocks[end_block.key] = end_block
     return [function_name, basic_blocks]
 
@@ -244,7 +258,8 @@ def draw_cfg(function_name, basic_blocks, view):
         dot.node(key, shape='record', label=basic_block.get_label())
     for basic_block in basic_blocks.values():
         if basic_block.jump_edge:
-            dot.edge(f'{basic_block.key}:s0', basic_block.no_jump_edge)
+            if basic_block.no_jump_edge is not None:
+                dot.edge(f'{basic_block.key}:s0', basic_block.no_jump_edge)
             dot.edge(f'{basic_block.key}:s1', basic_block.jump_edge)
         elif basic_block.no_jump_edge:
             dot.edge(basic_block.key, basic_block.no_jump_edge)
