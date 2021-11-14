@@ -120,7 +120,7 @@ def get_call_pattern(stripped):
     """
     if stripped:
         return re.compile(r'0x0*([01-9a-fA-F]+):.*callq?\s*(.*[01-9a-fA-F]+.*)$')
-    return re.compile(r'<\+(\d+)>:.*callq?\s*(.*[01-9a-fA-F]+.*)$')
+    return re.compile(r'<[+-](\d+)>:.*callq?\s*(.*[01-9a-fA-F]+.*)$')
 
 
 def get_jump_pattern(stripped, function_name):
@@ -135,7 +135,7 @@ def get_jump_pattern(stripped, function_name):
     """
     if stripped:
         return re.compile(r'0x0*([01-9a-fA-F]+):\W+\w+\W+0x0*([01-9a-fA-F]+)$')
-    return re.compile(fr'<\+(\d+)>:.+<{function_name}\+(\d+)>')
+    return re.compile(fr'<[+-](\d+)>:.+<{function_name}[+-](\d+)>')
 
 
 def get_assembly_line_pattern(stripped):
@@ -150,7 +150,7 @@ def get_assembly_line_pattern(stripped):
     """
     if stripped:
         return re.compile(r'0x0*([0-9a-fA-F]+):\W+(.+)$')
-    return re.compile(r'<\+(\d+)>:\W+(.+)$')
+    return re.compile(r'<[+-](\d+)>:\W+(.+)$')
 
 
 def parse_lines(lines, skip_calls):
@@ -220,6 +220,8 @@ def parse_lines(lines, skip_calls):
                 current_basic_block.add_instruction(instruction)
         elif 'End of assembler dump' in line:
             break
+        elif line.startswith('Address range'):
+            continue
         else:
             print(f'unsupported line: {line}')
             exit(1)
