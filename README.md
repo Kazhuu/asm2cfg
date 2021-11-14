@@ -177,9 +177,17 @@ splitting the code to further blocks provide `-c` flag. To show the help use
 ## Examples
 
 Repository includes examples which can be used to test the standalone
-functionality. File `test_function.asm` is non-stripped assembly file and its
-corresponding output `test_function.pdf`. File `stripped_function.asm` contains
+functionality.
+
+File `test_function.asm` is non-stripped assembly file and its
+corresponding output `test_function.pdf`.
+
+File `stripped_function.asm` contains
 stripped function and its corresponding output
-`0x555555555faf-0x555555557008.pdf`. File `huge.asm` is a large stripped
+`0x555555555faf-0x555555557008.pdf`.
+
+File `att_syntax.asm` is an example of non-stripped AT&T assembly.
+
+File `huge.asm` is a large stripped
 assembly function and its corresponding output `main.pdf`. This can be used to
 test processing time of big functions.

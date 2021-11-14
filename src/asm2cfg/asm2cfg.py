@@ -119,8 +119,8 @@ def get_call_pattern(stripped):
     0x000055555557259c <+11340>:	addr32 call 0x55555558add0 <_Z19exportDebugifyStats>
     """
     if stripped:
-        return re.compile(r'0x0*([01-9a-fA-F]+):.*call\s*(.*[01-9a-fA-F]+.*)$')
-    return re.compile(r'<\+(\d+)>:.*call\s*(.*[01-9a-fA-F]+.*)$')
+        return re.compile(r'0x0*([01-9a-fA-F]+):.*callq?\s*(.*[01-9a-fA-F]+.*)$')
+    return re.compile(r'<\+(\d+)>:.*callq?\s*(.*[01-9a-fA-F]+.*)$')
 
 
 def get_jump_pattern(stripped, function_name):
