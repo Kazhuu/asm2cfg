@@ -104,56 +104,43 @@ program with the same functionality as from GDB but with external files.
 To use as standalone script you first need to dump assembly from GDB to the file
 which is explained below.
 
-### Disassembly Function
+### Knowing Function Name
 
-For steps below to work GDB needs to be configured to support pending
-breakpoints. To permanently set this add following to your `.gdbinit`.
-
+If you don't know the name of function you're looking for then you can also list
+all function names using GDB:
 ```
-# Don't ask when restarting the application.
-set confirm off
-# Use pending breakpoints by default.
-set breakpoint pending on
+gdb -batch -ex 'b main' -ex r -ex 'info functions' ./test_executable
 ```
+This will set breakpoint at function `main`, then
+run the program and print symbols from all loaded libraries.
 
-First disassembly function from your binary file using GDB. You have to know the
-function name before hand. To disassembly function named `test_function` from
-binary `test_executable` run
-
+For functions which come from main executable you can avoid runnnig the program
+and simply do
 ```
-gdb -ex 'b test_function' -ex 'run' -ex 'pipe disassemble | tee test_function.asm' -ex 'quit' ./test_executable
-```
-
-This will set breakpoint at function `test_function`, then
-run the program and disassembly the current function where the breakpoint was
-set to the file `test_function.asm`.
-
-If you don't know the function name you're looking for then you can also list
-all function names using GDB. First set breakpoint at main function and start
-the executable you want with
-
-```
-gdb -ex 'b main' -ex 'run' ./test_executable
-```
-
-Now GDB will break at main function. Now to list all available functions use
-
-```
-info functions
+gdb -batch -ex 'info functions' ./test_executable
 ```
 
 If you want to narrow the search down you can also use regexp
-
 ```
-info functions <regexp>
+gdb ... -ex 'info functions <regexp>' ...
 ```
 
-Now set breakpoint in the function you want and use `continue` to continue
-execution. When breakpoint is hit then disassembly the current function to file
-with
+### Disassemble Function
 
+Once you have the function name, you can produce its disassembly via
 ```
-pipe disassemble | tee <filename>.asm
+gdb -batch -ex 'b main' -ex r -ex 'pipe disassemble test_function | tee test_function.asm' ./test_executable
+```
+or
+```
+gdb -batch -ex 'set breakpoints pending on' -ex 'b test_function' -ex r -ex 'pipe disassemble | tee test_function.asm' ./test_executable
+```
+(the `set breakpoint pending on` command enables pending breakpoints and
+could be added to your `.gdbinit` instead).
+
+For functions from main executable it's enough to do
+```
+gdb -batch -ex 'pipe disassemble test_function | tee test_function.asm' ./test_executable
 ```
 
 ### Draw CFG
