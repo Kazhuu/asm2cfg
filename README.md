@@ -21,7 +21,8 @@ or improvements. Please open an issue or create a pull request.
 * [Install](#install)
 * [Usage From GDB](#usage-from-gdb)
 * [Usage as Standalone](#usage-as-standalone)
-  * [Disassembly Function](#disassembly-function)
+  * [Knowing Function Name](#knowing-function-name)
+  * [Disassemble Function](#disassemble-function)
   * [Draw CFG](#draw-cfg)
 * [Examples](#examples)
 
@@ -108,19 +109,23 @@ which is explained below.
 
 If you don't know the name of function you're looking for then you can also list
 all function names using GDB:
+
 ```
 gdb -batch -ex 'b main' -ex r -ex 'info functions' ./test_executable
 ```
+
 This will set breakpoint at function `main`, then
 run the program and print symbols from all loaded libraries.
 
-For functions which come from main executable you can avoid runnnig the program
+For functions which come from main executable you can avoid running the program
 and simply do
+
 ```
 gdb -batch -ex 'info functions' ./test_executable
 ```
 
 If you want to narrow the search down you can also use regexp
+
 ```
 gdb ... -ex 'info functions <regexp>' ...
 ```
@@ -128,17 +133,22 @@ gdb ... -ex 'info functions <regexp>' ...
 ### Disassemble Function
 
 Once you have the function name, you can produce its disassembly via
+
 ```
 gdb -batch -ex 'b main' -ex r -ex 'pipe disassemble test_function | tee test_function.asm' ./test_executable
 ```
+
 or
+
 ```
 gdb -batch -ex 'set breakpoints pending on' -ex 'b test_function' -ex r -ex 'pipe disassemble | tee test_function.asm' ./test_executable
 ```
+
 (the `set breakpoint pending on` command enables pending breakpoints and
 could be added to your `.gdbinit` instead).
 
 For functions from main executable it's enough to do
+
 ```
 gdb -batch -ex 'pipe disassemble test_function | tee test_function.asm' ./test_executable
 ```
