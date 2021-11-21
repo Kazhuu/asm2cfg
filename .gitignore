@@ -7,3 +7,9 @@ __pycache__/
 build/
 dist/
 *egg-info
+
+# Vim swaps
+.*.swp
+
+# GDB history
+.gdb_history

@@ -83,6 +83,11 @@ def read_lines(file_path):
     return lines
 
 
+# Common regexes
+hex_pattern = r'[0-9a-fA-F]+'
+hex_long_pattern = r'(?:0x0*)?' + hex_pattern
+
+
 def get_stripped_and_function_name(line):
     """
     Return function name of memory range from the given string line. Return
@@ -95,7 +100,7 @@ def get_stripped_and_function_name(line):
     'Dump of assembler code from 0x555555555faf to 0x555555557008:'
     """
     function_name_pattern = re.compile(r'function (\w+):$')
-    memory_range_pattern = re.compile(r'from (0x[0-9a-fA-F]+) to (0x[0-9a-fA-F]+):$')
+    memory_range_pattern = re.compile(fr'from ({hex_long_pattern}) to ({hex_long_pattern}):$')
     function_name = function_name_pattern.search(line)
     memory_range = memory_range_pattern.search(line)
     if function_name is None and memory_range is None:
@@ -119,8 +124,8 @@ def get_call_pattern(stripped):
     0x000055555557259c <+11340>:	addr32 call 0x55555558add0 <_Z19exportDebugifyStats>
     """
     if stripped:
-        return re.compile(r'0x0*([01-9a-fA-F]+):.*call\s*(.*[01-9a-fA-F]+.*)$')
-    return re.compile(r'<\+(\d+)>:.*call\s*(.*[01-9a-fA-F]+.*)$')
+        return re.compile(fr'0x0*({hex_pattern}):.*callq?\s*(.*{hex_pattern}.*)$')
+    return re.compile(fr'<[+-](\d+)>:.*callq?\s*(.*{hex_pattern}.*)$')
 
 
 def get_jump_pattern(stripped, function_name):
@@ -134,8 +139,8 @@ def get_jump_pattern(stripped, function_name):
     '0x000055555555600f:        jmp  0x55555555603d'
     """
     if stripped:
-        return re.compile(r'0x0*([01-9a-fA-F]+):\W+\w+\W+0x0*([01-9a-fA-F]+)$')
-    return re.compile(fr'<\+(\d+)>:.+<{function_name}\+(\d+)>')
+        return re.compile(fr'0x0*({hex_pattern}):\W+\w+\W+0x0*({hex_pattern})$')
+    return re.compile(fr'<[+-](\d+)>:.+<{function_name}[+-](\d+)>')
 
 
 def get_assembly_line_pattern(stripped):
@@ -149,8 +154,8 @@ def get_assembly_line_pattern(stripped):
     '0x000055555555602a:        mov  rax,QWORD PTR [rip+0x311f]  # 0x555555559150'
     """
     if stripped:
-        return re.compile(r'0x0*([0-9a-fA-F]+):\W+(.+)$')
-    return re.compile(r'<\+(\d+)>:\W+(.+)$')
+        return re.compile(fr'0x0*({hex_pattern}):\W+(.+)$')
+    return re.compile(r'<[+-](\d+)>:\W+(.+)$')
 
 
 def parse_lines(lines, skip_calls):
@@ -220,6 +225,8 @@ def parse_lines(lines, skip_calls):
                 current_basic_block.add_instruction(instruction)
         elif 'End of assembler dump' in line:
             break
+        elif line.startswith('Address range'):
+            continue
         else:
             print(f'unsupported line: {line}')
             exit(1)
