@@ -240,13 +240,12 @@ def parse_lines(lines, skip_calls):
     if current_basic_block is not None:
         # Add the last basic block from end of the function.
         basic_blocks[current_basic_block.key] = current_basic_block
-    else:
+    elif previous_jump_block is not None:
         # If last instruction of the function is jump/call, then add dummy
         # block to designate end of the function.
         end_block = BasicBlock('end_of_function')
         end_block.add_instruction('end of function')
-        if previous_jump_block is not None:
-            previous_jump_block.add_no_jump_edge(end_block.key)
+        previous_jump_block.add_no_jump_edge(end_block.key)
         basic_blocks[end_block.key] = end_block
     return [function_name, basic_blocks]
 
