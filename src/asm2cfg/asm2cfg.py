@@ -3,7 +3,6 @@ import tempfile
 
 from graphviz import Digraph
 
-
 class BasicBlock:
     """
     Class to represent a node in CFG with straight lines of code without jump

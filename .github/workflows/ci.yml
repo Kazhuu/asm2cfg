@@ -29,6 +29,9 @@ jobs:
         sudo add-apt-repository ppa:deadsnakes/ppa
         sudo apt-get update
         sudo apt-get install ${PYTHON}
-        ${PYTHON} -m pip install graphviz
+        ${PYTHON} -m pip install pipenv
+        pipenv install --dev
     - name: Run tests
-      run: ${PYTHON} -m unittest
+      run: pipenv run python -m unittest
+    - name: Run linting
+      run: pipenv run flake8
