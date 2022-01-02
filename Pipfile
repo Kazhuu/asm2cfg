@@ -8,3 +8,4 @@ graphviz = "*"
 
 [dev-packages]
 ipdb = "*"
+flake8 = "*"
