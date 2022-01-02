@@ -1,3 +1,5 @@
+![asm2cfg CI status](https://github.com/Kazhuu/asm2cfg/actions/workflows/ci.yml/badge.svg)
+
 # asm2cfg
 
 GDB Python extension to view and save GDB disassembled function control-flow
