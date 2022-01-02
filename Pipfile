@@ -7,6 +7,4 @@ name = "pypi"
 graphviz = "*"
 
 [dev-packages]
-
-[requires]
-python_version = "3.9"
+ipdb = "*"
