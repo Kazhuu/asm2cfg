@@ -50,3 +50,23 @@ class CallPatternTest(unittest.TestCase):
         self.assertNotEqual(call_match, None)
         self.assertEqual(call_match[1], '555555556188')
         self.assertEqual(call_match[2], '0x555555555542')
+
+
+class JumpPatternTestCase(unittest.TestCase):
+    def test_stripped_jump(self):
+        line = '0x000055555555600f:        jmp  0x55555555603d'
+        pattern = asm2cfg.get_jump_pattern(True, 'does_not_matter')
+        jump_match = pattern.search(line)
+
+        self.assertNotEqual(jump_match, None)
+        self.assertEqual(jump_match[1], '55555555600f')
+        self.assertEqual(jump_match[2], '55555555603d')
+
+    def test_non_stripped_jump(self):
+        line = '0x00007ffff7fbf124 <+68>:  jmp  0x7ffff7fbf7c2 <test_function+1762>'
+        pattern = asm2cfg.get_jump_pattern(False, 'test_function')
+        jump_match = pattern.search(line)
+
+        self.assertNotEqual(jump_match, None)
+        self.assertEqual(jump_match[1], '68')
+        self.assertEqual(jump_match[2], '1762')
