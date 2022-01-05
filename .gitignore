@@ -8,8 +8,9 @@ build/
 dist/
 *egg-info
 
-# Vim swaps
+# Vim files
 .*.swp
+Session.vim
 
 # GDB history
 .gdb_history
