@@ -1,6 +1,6 @@
 # TODO:
-# * coverage
-# * Semmle
+# * Semmle (lgtm.com)
+# * Pylint
 
 name: CI
 on:
@@ -41,3 +41,32 @@ jobs:
     - name: Linting
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: pipenv run flake8
+  Lint:
+    runs-on: ubuntu-latest
+    env:
+      PYTHON: python3
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install deps
+      run: |
+        ${PYTHON} -m pip install pipenv
+        pipenv install --dev
+    - name: Linting
+      run: pipenv run flake8
+  Coverage:
+    needs: [Lint, Baseline]
+    runs-on: ubuntu-latest
+    env:
+      PYTHON: python3
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install deps
+      run: |
+        ${PYTHON} -m pip install pipenv
+        pipenv install --dev
+    - name: Run tests
+      run: pipenv run pytest --cov-report xml --cov=src test/
+    - name: Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        files: ./coverage.xml
