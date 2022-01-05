@@ -9,3 +9,4 @@ graphviz = "*"
 [dev-packages]
 ipdb = "*"
 flake8 = "*"
+pytest = "*"

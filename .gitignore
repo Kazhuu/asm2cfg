@@ -13,3 +13,6 @@ dist/
 
 # GDB history
 .gdb_history
+
+# Test output
+test_output*

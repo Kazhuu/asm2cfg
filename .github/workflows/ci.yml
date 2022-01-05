@@ -33,7 +33,11 @@ jobs:
         ${PYTHON} -m pip install pipenv
         pipenv install --dev
     - name: Run tests
-      run: pipenv run python -m unittest
+      run: pipenv run pytest --junitxml=test_output.xml
+    - name: Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        files: ./test_output.xml
     - name: Linting
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: pipenv run flake8
