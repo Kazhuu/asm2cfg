@@ -10,7 +10,7 @@ dist/
 Pipfile.lock
 
 # Vim files
-.*.swp
+.*swp
 Session.vim
 
 # GDB history
@@ -19,3 +19,6 @@ Session.vim
 # Reporting
 coverage.xml
 .coverage
+
+# Test files
+a.out
