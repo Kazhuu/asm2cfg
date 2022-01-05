@@ -7,6 +7,7 @@ __pycache__/
 build/
 dist/
 *egg-info
+Pipfile.lock
 
 # Vim files
 .*.swp
@@ -15,5 +16,6 @@ Session.vim
 # GDB history
 .gdb_history
 
-# Test output
-test_output*
+# Reporting
+coverage.xml
+.coverage
