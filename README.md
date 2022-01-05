@@ -1,6 +1,7 @@
-![asm2cfg CI status](https://github.com/Kazhuu/asm2cfg/actions/workflows/ci.yml/badge.svg)
 
 # asm2cfg
+![CI status](https://github.com/Kazhuu/asm2cfg/actions/workflows/ci.yml/badge.svg)
+[![codecov](https://codecov.io/gh/Kazhuu/asm2cfg/branch/main/graph/badge.svg?token=ZHLOJO8Q3V)](https://codecov.io/gh/Kazhuu/asm2cfg)
 
 GDB Python extension to view and save GDB disassembled function control-flow
 graphs (CFG) with simple commands straight from GDB session. To view CFG use
