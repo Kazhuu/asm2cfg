@@ -12,36 +12,40 @@ set_basename(os.path.basename(__file__))
 
 for gdb in [False, True]:
     for pic in [False, True]:  # Do we need to test PIE too?
-        for strip in [False, True]:
-            # Print config
+        for opt in [False, True]:
+            for strip in [False, True]:
+                # Print config
 
-            disasm_type = 'GDB' if gdb else 'objdump'
-            pic_type = 'position-INdependent' if pic else 'position-dependent'
-            stripped = 'stripped' if strip else 'UNstripped'
-            print(f"Checking {disasm_type} {pic_type} {stripped}")
+                disasm_type = 'GDB' if gdb else 'objdump'
+                pic_type = 'position-INdependent' if pic else 'position-dependent'
+                opt_type = 'optimized' if opt else 'UNoptimized'
+                stripped = 'stripped' if strip else 'UNstripped'
+                print(f"Checking {disasm_type} {pic_type} {opt_type} {stripped}")
 
-            # Generate object code
+                # Generate object code
 
-            flags = ['jump.c', '-o', 'a.out',
-                     '-Wl,--defsym,_start=0', '-nostdlib', '-nostartfiles']
-            # DLL or executable?
-            if pic:
-                flags += ['-fPIC', '-shared']
-            # Include debuginfo?
-            if not strip:
-                flags.append('-g')
+                flags = ['jump.c', '-o', 'a.out',
+                         '-Wl,--defsym,_start=0', '-nostdlib', '-nostartfiles']
+                # DLL or executable?
+                if pic:
+                    flags += ['-fPIC', '-shared']
+                if opt:
+                    flags.append('-O2')
+                # Include debuginfo?
+                if not strip:
+                    flags.append('-g')
 
-            gcc(flags)
+                gcc(flags)
 
-            # Generate disasm
+                # Generate disasm
 
-            caller = 'bar'
-            out = disasm('a.out', not gdb, strip, caller)
+                caller = 'bar'
+                out = disasm('a.out', not gdb, strip, caller)
 
-            # Print snippets
+                # Print snippets
 
-            jumps = grep(out, r'ju?mp')
-            print('''\
+                jumps = grep(out, r'\bj')
+                print('''\
   jumps:
     {}
 '''.format('\n    '.join(jumps)))

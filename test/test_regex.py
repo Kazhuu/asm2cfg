@@ -85,7 +85,7 @@ class CallPatternTestCase(unittest.TestCase):
 
 
 class JumpPatternTestCase(unittest.TestCase):
-    def test_gdb_stripped_jump(self):
+    def test_gdb_stripped_unconditional(self):
         line = '0x000055555555600f:        jmp  0x55555555603d'
         pattern = asm2cfg.get_jump_pattern(True, 'does_not_matter')
         jump_match = pattern.search(line)
@@ -94,7 +94,7 @@ class JumpPatternTestCase(unittest.TestCase):
         self.assertEqual(jump_match[1], '55555555600f')
         self.assertEqual(jump_match[2], '55555555603d')
 
-    def test_gdb_non_stripped_jump(self):
+    def test_gdb_non_stripped_unconditional(self):
         line = '0x00007ffff7fbf124 <+68>:  jmp  0x7ffff7fbf7c2 <test_function+1762>'
         pattern = asm2cfg.get_jump_pattern(False, 'test_function')
         jump_match = pattern.search(line)
@@ -104,7 +104,17 @@ class JumpPatternTestCase(unittest.TestCase):
         self.assertEqual(jump_match[2], '1762')
 
     @unittest.expectedFailure
-    def test_objdump(self):
+    def test_gdb_non_stripped_conditional(self):
+        line = '0x000000000000100f <+15>:	jle    0x1019 <bar+25>'
+        pattern = asm2cfg.get_jump_pattern(False, 'test_function')
+        jump_match = pattern.search(line)
+
+        self.assertIsNot(jump_match, None)
+        self.assertEqual(jump_match[1], '15')
+        self.assertEqual(jump_match[2], '25')
+
+    @unittest.expectedFailure
+    def test_objdump_unconditional(self):
         line = '1017:	eb 06                	jmp    101f <bar+0x1f>'
         pattern = asm2cfg.get_jump_pattern(False, 'does_not_matter')
         jump_match = pattern.search(line)
@@ -112,3 +122,13 @@ class JumpPatternTestCase(unittest.TestCase):
         self.assertIsNot(jump_match, None)
         self.assertEqual(jump_match[1], '1017')
         self.assertEqual(jump_match[2], '0x1f')
+
+    @unittest.expectedFailure
+    def test_objdump_conditional(self):
+        line = '100f:	7e 08                	jle    1019 <bar+0x19>'
+        pattern = asm2cfg.get_jump_pattern(False, 'does_not_matter')
+        jump_match = pattern.search(line)
+
+        self.assertIsNot(jump_match, None)
+        self.assertEqual(jump_match[1], '100f')
+        self.assertEqual(jump_match[2], '0x19')
