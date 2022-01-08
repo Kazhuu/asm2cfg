@@ -4,7 +4,7 @@ import re
 import os
 
 _me = os.path.basename(__file__)
-v = 0
+verbose = 0
 
 
 def set_basename(file):
@@ -20,15 +20,15 @@ def error(msg):
     sys.exit(1)
 
 
-def run(cmd, stdin=None):
-    if v:
+def _run(cmd, stdin=None):
+    if verbose:
         print(f"{_me}: running command: {' '.join(cmd)}")
     with subprocess.Popen(cmd, stdin=stdin, stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE) as p:
-        out, err = p.communicate()
+                          stderr=subprocess.PIPE) as process:
+        out, err = process.communicate()
     out = out.decode()
     err = err.decode()
-    if p.returncode != 0:
+    if process.returncode != 0:
         cmds = ' '.join(cmd)
         error(f"'{cmds}' failed:\n{out}{err}")
     sys.stderr.write(err)
@@ -36,11 +36,19 @@ def run(cmd, stdin=None):
 
 
 def gcc(args):
-    return run(['gcc'] + args)
+    return _run(['gcc'] + args)
 
 
-def disasm(file):
-    return run(['objdump', '-d', file])
+def disasm(file, objdump_or_gdb, strip=None, symbol=None):
+    if objdump_or_gdb:
+        out = _run(['objdump', '-d', file])
+    elif strip:
+        # This is tricky as we can not use symbol name
+        start, finish = _find_address(file, symbol)
+        out = _run(['gdb', '-batch', '-ex', f'disassemble {start},{finish}', file])
+    else:
+        out = _run(['gdb', '-batch', '-ex', f'disassemble {symbol}', file])
+    return out
 
 
 def grep(s, regex):
@@ -48,8 +56,8 @@ def grep(s, regex):
     return list(filter(lambda s: re.search(regex, s), lines))
 
 
-def find_address(file, name):
-    out = run(['readelf', '-sW', file])
+def _find_address(file, name):
+    out = _run(['readelf', '-sW', file])
     lines = grep(out, fr'{name}$')
     assert len(lines) >= 1, f"failed to locate symbol {name} in\n{out}"
     line = lines[0]

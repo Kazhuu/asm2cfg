@@ -32,7 +32,7 @@ class CallPatternTestCase(unittest.TestCase):
         self.strip_regex = asm2cfg.get_call_pattern(True)
         self.unstrip_regex = asm2cfg.get_call_pattern(False)
 
-    def test_stripped_known(self):
+    def test_gdb_stripped_known(self):
         line = '0x000055555557259c:	addr32 call 0x55555558add0 <_Z19exportDebugifyStats>'
         call_match = self.strip_regex.match(line)
 
@@ -41,7 +41,7 @@ class CallPatternTestCase(unittest.TestCase):
         self.assertEqual(call_match[2], '0x55555558add0 <_Z19exportDebugifyStats>')  # FIXME: keep just symbolic name?
 
     @unittest.expectedFailure
-    def test_unstripped_known(self):
+    def test_gdb_unstripped_known(self):
         line = '0x000055555557259c <+11340>:	addr32 call 0x55555558add0 <_Z19exportDebugifyStats>'
         call_match = self.unstrip_regex.match(line)
 
@@ -49,7 +49,7 @@ class CallPatternTestCase(unittest.TestCase):
         self.assertEqual(call_match[1], '11340')
         self.assertEqual(call_match[2], '???')
 
-    def test_stripped_pic(self):
+    def test_gdb_stripped_pic(self):
         line = '0x000055555556fd8c:	call   *0x26a16(%rip)        # 0x5555555967a8'
         call_match = self.strip_regex.match(line)
 
@@ -75,7 +75,7 @@ class CallPatternTestCase(unittest.TestCase):
         self.assertEqual(call_match[1], '1048')
         self.assertEqual(call_match[2], 'callq  0x1020 <foo@plt>')
 
-    def test_stripped_nonpic(self):
+    def test_gdb_stripped_nonpic(self):
         line = '0x0000555555556188:	call   0x555555555542'
         call_match = self.strip_regex.match(line)
 
@@ -85,7 +85,7 @@ class CallPatternTestCase(unittest.TestCase):
 
 
 class JumpPatternTestCase(unittest.TestCase):
-    def test_stripped_jump(self):
+    def test_gdb_stripped_jump(self):
         line = '0x000055555555600f:        jmp  0x55555555603d'
         pattern = asm2cfg.get_jump_pattern(True, 'does_not_matter')
         jump_match = pattern.search(line)
@@ -93,6 +93,15 @@ class JumpPatternTestCase(unittest.TestCase):
         self.assertIsNot(jump_match, None)
         self.assertEqual(jump_match[1], '55555555600f')
         self.assertEqual(jump_match[2], '55555555603d')
+
+    def test_gdb_non_stripped_jump(self):
+        line = '0x00007ffff7fbf124 <+68>:  jmp  0x7ffff7fbf7c2 <test_function+1762>'
+        pattern = asm2cfg.get_jump_pattern(False, 'test_function')
+        jump_match = pattern.search(line)
+
+        self.assertIsNot(jump_match, None)
+        self.assertEqual(jump_match[1], '68')
+        self.assertEqual(jump_match[2], '1762')
 
     @unittest.expectedFailure
     def test_objdump(self):
@@ -102,13 +111,4 @@ class JumpPatternTestCase(unittest.TestCase):
 
         self.assertIsNot(jump_match, None)
         self.assertEqual(jump_match[1], '1017')
-        self.assertEqual(jump_match[2], '101f <bar+0x1f>')
-
-    def test_non_stripped_jump(self):
-        line = '0x00007ffff7fbf124 <+68>:  jmp  0x7ffff7fbf7c2 <test_function+1762>'
-        pattern = asm2cfg.get_jump_pattern(False, 'test_function')
-        jump_match = pattern.search(line)
-
-        self.assertIsNot(jump_match, None)
-        self.assertEqual(jump_match[1], '68')
-        self.assertEqual(jump_match[2], '1762')
+        self.assertEqual(jump_match[2], '0x1f')

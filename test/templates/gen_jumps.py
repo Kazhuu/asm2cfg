@@ -6,7 +6,7 @@ Generate different flavors of input assembly for testing.
 
 import os.path
 
-from common import set_basename, run, gcc, disasm, find_address, grep
+from common import set_basename, gcc, disasm, grep
 
 set_basename(os.path.basename(__file__))
 
@@ -24,25 +24,24 @@ for gdb in [False, True]:
 
             flags = ['jump.c', '-o', 'a.out',
                      '-Wl,--defsym,_start=0', '-nostdlib', '-nostartfiles']
-            # Shlib or executable?
+            # DLL or executable?
             if pic:
                 flags += ['-fPIC', '-shared']
             # Include debuginfo?
             if not strip:
                 flags.append('-g')
 
-            out = gcc(flags)
+            gcc(flags)
 
             # Generate disasm
 
-            if gdb:
-                # This is tricky as we can not use symbol name
-                start, finish = find_address('a.out', 'bar')
-                out = run(['gdb', '-batch', '-ex', f'disassemble {start},{finish}', 'a.out'])
-            else:
-                out = disasm('a.out')
+            caller = 'bar'
+            out = disasm('a.out', not gdb, strip, caller)
 
             # Print snippets
 
             jumps = grep(out, r'ju?mp')
-            print('\n    '.join(['  jumps:'] + jumps))
+            print('''\
+  jumps:
+    {}
+'''.format('\n    '.join(jumps)))
