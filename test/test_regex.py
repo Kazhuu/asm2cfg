@@ -132,3 +132,23 @@ class JumpPatternTestCase(unittest.TestCase):
         self.assertIsNot(jump_match, None)
         self.assertEqual(jump_match[1], '100f')
         self.assertEqual(jump_match[2], '0x19')
+
+    @unittest.expectedFailure
+    def test_gdb_jumptable(self):
+        line = '0x000000000000101d <+29>:	notrack jmpq *%rax'
+        pattern = asm2cfg.get_jump_pattern(False, 'test_function')
+        jump_match = pattern.search(line)
+
+        self.assertIsNot(jump_match, None)
+        self.assertEqual(jump_match[1], '29')
+        self.assertEqual(jump_match[2], '')
+
+    @unittest.expectedFailure
+    def test_objdump_jumptable(self):
+        line = '101d:	3e ff e0             	notrack jmpq *%rax'
+        pattern = asm2cfg.get_jump_pattern(False, 'does_not_matter')
+        jump_match = pattern.search(line)
+
+        self.assertIsNot(jump_match, None)
+        self.assertEqual(jump_match[1], '101d')
+        self.assertEqual(jump_match[2], '')
