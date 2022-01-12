@@ -110,6 +110,38 @@ class CallPatternTestCase(unittest.TestCase):
         self.assertEqual(call_match[1], '555555556188')
         self.assertEqual(call_match[2], '0x555555555542')
 
+    @unittest.expectedFailure
+    def test_gdb_indirect_call(self):
+        line = '0x0000000000001013 <+19>:	callq  *(%rsi)'
+        call_match = self.strip_regex.match(line)
+
+        self.assertIsNot(call_match, None)
+        self.assertEqual(call_match[1], '19')
+        self.assertEqual(call_match[2], '')
+
+        line = '0x0000000000001013 <+19>:	callq  *0x8(%rbx)'
+        call_match = self.strip_regex.match(line)
+
+        self.assertIsNot(call_match, None)
+        self.assertEqual(call_match[1], '19')
+        self.assertEqual(call_match[2], '')
+
+    @unittest.expectedFailure
+    def test_objdump_indirect_call(self):
+        line = '1013:	ff 16                	callq  *(%rsi)'
+        call_match = self.strip_regex.match(line)
+
+        self.assertIsNot(call_match, None)
+        self.assertEqual(call_match[1], '1013')
+        self.assertEqual(call_match[2], '')
+
+        line = '1013:	ff 16                	callq  *0x8(%rbx)'
+        call_match = self.strip_regex.match(line)
+
+        self.assertIsNot(call_match, None)
+        self.assertEqual(call_match[1], '1013')
+        self.assertEqual(call_match[2], '')
+
 
 class JumpPatternTestCase(unittest.TestCase):
     def test_gdb_stripped(self):

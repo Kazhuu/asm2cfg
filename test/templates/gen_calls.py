@@ -5,8 +5,6 @@ Generate different flavors of input assembly for testing.
 """
 
 # TODO: find a way to produce other snippets we see in disasm:
-#  call   *%rax
-#  call   *0x8(%rax)
 #  addr32 call 0x5555555733e0
 #  call   0x555555576a00
 
