@@ -45,6 +45,9 @@ for gdb in [False, True]:
                         flags.append('-DHIDDEN')
                     # Include debuginfo?
                     if not strip:
+                        # FIXME: for real stripping of symtab we need to run
+                        # `strip a.out` and `strip -s a.out`.
+                        # This should be done for other tests too.
                         flags.append('-g')
 
                     gcc(flags)
