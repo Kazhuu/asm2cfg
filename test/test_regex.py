@@ -211,3 +211,13 @@ class JumpPatternTestCase(unittest.TestCase):
         self.assertIsNot(jump_match, None)
         self.assertEqual(jump_match[1], '101d')
         self.assertEqual(jump_match[2], '')
+
+    @unittest.expectedFailure
+    def test_objdump_funnyjump(self):
+        line = '1044:	f2 ff 25 d5 2f 00 00 	bnd jmpq *0x2fd5(%rip)        # 4020 <foo+0x2fd0>'
+        pattern = asm2cfg.get_jump_pattern(False, 'does_not_matter')
+        jump_match = pattern.search(line)
+
+        self.assertIsNot(jump_match, None)
+        self.assertEqual(jump_match[1], '4020')
+        self.assertEqual(jump_match[2], '0x2fd0')

@@ -7,7 +7,7 @@ Generate different flavors of input assembly for testing.
 import os.path
 import itertools
 
-from common import set_basename, gcc, disasm, grep
+from common import set_basename, gcc, disasm, grep, strip_binary, find_address
 
 set_basename(os.path.basename(__file__))
 
@@ -32,16 +32,20 @@ for gdb, pic, opt, strip in itertools.product([False, True],
         flags += ['-fPIC', '-shared']
     if opt:
         flags.append('-O2')
-    # Include debuginfo?
-    if not strip:
-        flags.append('-g')
 
     gcc(flags)
 
-    # Generate disasm
+    # Strip
 
     caller = 'bar'
-    out = disasm('a.out', not gdb, strip, caller)
+    start, finish = find_address('a.out', caller)
+    if strip:
+        strip_binary('a.out')
+        caller = None
+
+    # Generate disasm
+
+    out = disasm('a.out', not gdb, caller, start, finish)
 
     # Print snippets
 

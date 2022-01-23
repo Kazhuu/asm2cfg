@@ -21,6 +21,9 @@ def error(msg):
 
 
 def _run(cmd, stdin=None):
+    """
+    Run process and abort on error.
+    """
     if verbose:
         print(f"{_me}: running command: {' '.join(cmd)}")
     with subprocess.Popen(cmd, stdin=stdin, stdout=subprocess.PIPE,
@@ -36,19 +39,30 @@ def _run(cmd, stdin=None):
 
 
 def gcc(args):
+    """
+    Run compiler with given arguments.
+    """
     return _run(['gcc'] + args)
 
 
-def disasm(file, objdump_or_gdb, strip=None, symbol=None):
+def disasm(file, objdump_or_gdb, symbol, start, finish):
+    """
+    Disassemble binary file.
+    """
     if objdump_or_gdb:
         out = _run(['objdump', '-d', file])
-    elif strip:
-        # This is tricky as we can not use symbol name
-        start, finish = _find_address(file, symbol)
-        out = _run(['gdb', '-batch', '-ex', f'disassemble {start},{finish}', file])
-    else:
+    elif symbol is not None:
         out = _run(['gdb', '-batch', '-ex', f'disassemble {symbol}', file])
+    else:
+        out = _run(['gdb', '-batch', '-ex', f'disassemble {start},{finish}', file])
     return out
+
+
+def strip_binary(file):
+    """
+    Strip symbol info from binary file.
+    """
+    _run(['strip', '-s', file])
 
 
 def grep(s, regex):
@@ -56,7 +70,7 @@ def grep(s, regex):
     return list(filter(lambda s: re.search(regex, s), lines))
 
 
-def _find_address(file, name):
+def find_address(file, name):
     out = _run(['readelf', '-sW', file])
     lines = grep(out, fr'{name}$')
     assert len(lines) >= 1, f"failed to locate symbol {name} in\n{out}"

@@ -6,12 +6,11 @@ Generate different flavors of input assembly for testing.
 
 # TODO: find a way to produce other snippets we see in disasm:
 #  addr32 call 0x5555555733e0
-#  call   0x555555576a00
 
 import os.path
 import itertools
 
-from common import set_basename, gcc, disasm, grep
+from common import set_basename, gcc, disasm, grep, strip_binary, find_address
 
 set_basename(os.path.basename(__file__))
 
@@ -42,23 +41,22 @@ for gdb, pic, plt, direct, strip in itertools.product([False, True],
     # Force non-PLT call for PIC code?
     if direct and pic:
         flags.append('-DHIDDEN')
-    # Include debuginfo?
-    if not strip:
-        # FIXME: for real stripping of symtab we need to run
-        # `strip a.out` and `strip -s a.out`.
-        # This should be done for other tests too.
-        flags.append('-g')
 
     gcc(flags)
 
+    caller = 'bar'
+    start, finish = find_address('a.out', caller)
+    if strip:
+        strip_binary('a.out')
+        caller = None
+
     # Generate disasm
 
-    caller = 'bar'
-    out = disasm('a.out', not gdb, strip, caller)
+    out = disasm('a.out', not gdb, caller, start, finish)
 
     # Print snippets
 
-    headers = grep(out, fr'<{caller}>:|Dump of')
+    headers = grep(out, r'<bar>:|Dump of')
     calls = grep(out, r'call')
     print('''\
   headers:
