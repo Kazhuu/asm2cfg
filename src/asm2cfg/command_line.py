@@ -1,8 +1,13 @@
+"""
+Command-line usage support.
+"""
+
 import argparse
 from . import asm2cfg
 
 
 def main():
+    """ Command-line entry point to the program. """
     parser = argparse.ArgumentParser(
         description='Program to draw dot control-flow graph from GDB disassembly for a function.',
         epilog='If function CFG rendering takes too long, try to skip function calls with -c flag.'
