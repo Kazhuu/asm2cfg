@@ -1,7 +1,25 @@
+"""
+Module containing main building blocks to parse assembly and draw CFGs.
+"""
+
 import re
+import sys
 import tempfile
 
 from graphviz import Digraph
+
+
+def escape(instruction):
+    """
+    Escape used dot graph characters in given instruction so they will be
+    displayed correctly.
+    """
+    instruction = instruction.replace('<', r'\<')
+    instruction = instruction.replace('>', r'\>')
+    instruction = instruction.replace('|', r'\|')
+    instruction = instruction.replace('{', r'\{')
+    instruction = instruction.replace('}', r'\}')
+    return instruction
 
 
 class BasicBlock:
@@ -20,7 +38,7 @@ class BasicBlock:
         """
         Add instruction to this block.
         """
-        self.instructions.append(self._escape(instruction))
+        self.instructions.append(escape(instruction))
 
     def add_jump_edge(self, basic_block_key):
         """
@@ -61,14 +79,6 @@ class BasicBlock:
     def __repr__(self):
         return '\n'.join(self.instructions)
 
-    def _escape(self, instruction):
-        instruction = instruction.replace('<', r'\<')
-        instruction = instruction.replace('>', r'\>')
-        instruction = instruction.replace('|', r'\|')
-        instruction = instruction.replace('{', r'\{')
-        instruction = instruction.replace('}', r'\}')
-        return instruction
-
 
 def print_assembly(basic_blocks):
     """
@@ -79,15 +89,16 @@ def print_assembly(basic_blocks):
 
 
 def read_lines(file_path):
+    """ Read lines from the file and return then as a list. """
     lines = []
-    with open(file_path, 'r') as asm_file:
+    with open(file_path, 'r', encoding='utf8') as asm_file:
         lines = asm_file.readlines()
     return lines
 
 
 # Common regexes
-hex_pattern = r'[0-9a-fA-F]+'
-hex_long_pattern = r'(?:0x0*)?' + hex_pattern
+HEX_PATTERN = r'[0-9a-fA-F]+'
+HEX_LONG_PATTERN = r'(?:0x0*)?' + HEX_PATTERN
 
 
 def get_stripped_and_function_name(line):
@@ -102,12 +113,12 @@ def get_stripped_and_function_name(line):
     'Dump of assembler code from 0x555555555faf to 0x555555557008:'
     """
     function_name_pattern = re.compile(r'function (\w+):$')
-    memory_range_pattern = re.compile(fr'from ({hex_long_pattern}) to ({hex_long_pattern}):$')
+    memory_range_pattern = re.compile(fr'from ({HEX_LONG_PATTERN}) to ({HEX_LONG_PATTERN}):$')
     function_name = function_name_pattern.search(line)
     memory_range = memory_range_pattern.search(line)
     if function_name is None and memory_range is None:
         print('First line of the file does not contain a function name or valid memory range')
-        exit(1)
+        sys.exit(1)
     if function_name is None:
         return [True, f'{memory_range[1]}-{memory_range[2]}']
     return [False, function_name[1]]
@@ -126,8 +137,8 @@ def get_call_pattern(stripped):
     0x000055555557259c <+11340>:	addr32 call 0x55555558add0 <_Z19exportDebugifyStats>
     """
     if stripped:
-        return re.compile(fr'0x0*({hex_pattern}):.*callq?\s*(.*{hex_pattern}.*)$')
-    return re.compile(fr'<[+-](\d+)>:.*callq?\s*(.*{hex_pattern}.*)$')
+        return re.compile(fr'0x0*({HEX_PATTERN}):.*callq?\s*(.*{HEX_PATTERN}.*)$')
+    return re.compile(fr'<[+-](\d+)>:.*callq?\s*(.*{HEX_PATTERN}.*)$')
 
 
 def get_jump_pattern(stripped, function_name):
@@ -141,11 +152,11 @@ def get_jump_pattern(stripped, function_name):
     '0x000055555555600f:        jmp  0x55555555603d'
     """
     if stripped:
-        return re.compile(fr'0x0*({hex_pattern}):\W+\w+\W+0x0*({hex_pattern})$')
+        return re.compile(fr'0x0*({HEX_PATTERN}):\W+\w+\W+0x0*({HEX_PATTERN})$')
     return re.compile(fr'<[+-](\d+)>:.+<{function_name}[+-](\d+)>')
 
 
-def get_unconditional_branch_pattern(stripped):
+def get_unconditional_branch_pattern():
     """
     Return regexp pattern used to identify unconditional jumps.
     """
@@ -163,11 +174,11 @@ def get_assembly_line_pattern(stripped):
     '0x000055555555602a:        mov  rax,QWORD PTR [rip+0x311f]  # 0x555555559150'
     """
     if stripped:
-        return re.compile(fr'0x0*({hex_pattern}):\W+(.+)$')
+        return re.compile(fr'0x0*({HEX_PATTERN}):\W+(.+)$')
     return re.compile(r'<[+-](\d+)>:\W+(.+)$')
 
 
-def parse_lines(lines, skip_calls):
+def parse_lines(lines, skip_calls):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     stripped, function_name = get_stripped_and_function_name(lines[0])
     # Dict key contains address where the jump begins and value which address
     # to jump to. This also includes calls.
@@ -176,15 +187,14 @@ def parse_lines(lines, skip_calls):
     jump_destinations = set()
     call_pattern = get_call_pattern(stripped)
     jump_pattern = get_jump_pattern(stripped, function_name)
-    uncond_jump_pattern = get_unconditional_branch_pattern(stripped)
+    uncond_jump_pattern = get_unconditional_branch_pattern()
 
     # Iterate over the lines and collect jump targets and branching points.
     for line in lines[1:-1]:
         match = call_pattern.search(line)
         if match is not None and skip_calls:
             continue
-        else:
-            match = jump_pattern.search(line)
+        match = jump_pattern.search(line)
         if match is not None:
             branch_point = match[1]
             jump_point = match[2]
@@ -242,7 +252,7 @@ def parse_lines(lines, skip_calls):
             continue
         else:
             print(f'unsupported line: {line}')
-            exit(1)
+            sys.exit(1)
 
     if current_basic_block is not None:
         # Add the last basic block from end of the function.
@@ -271,9 +281,9 @@ def draw_cfg(function_name, basic_blocks, view):
             dot.edge(basic_block.key, basic_block.no_jump_edge)
     if view:
         dot.format = 'gv'
-        filename = tempfile.NamedTemporaryFile(mode='w+b', prefix=function_name)
-        dot.view(filename.name)
-        print(f'Opening a file {filename.name}.{dot.format} with default viewer. Don\'t forget to delete it later.')
+        with tempfile.NamedTemporaryFile(mode='w+b', prefix=function_name) as filename:
+            dot.view(filename.name)
+            print(f'Opening a file {filename.name}.{dot.format} with default viewer. Don\'t forget to delete it later.')
     else:
         dot.format = 'pdf'
         dot.render(filename=function_name, cleanup=True)
