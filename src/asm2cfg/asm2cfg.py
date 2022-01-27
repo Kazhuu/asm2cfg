@@ -21,6 +21,7 @@ def escape(instruction):
     instruction = instruction.replace('}', r'\}')
     return instruction
 
+
 class BasicBlock:
     """
     Class to represent a node in CFG with straight lines of code without jump
@@ -77,6 +78,7 @@ class BasicBlock:
 
     def __repr__(self):
         return '\n'.join(self.instructions)
+
 
 def print_assembly(basic_blocks):
     """
@@ -176,8 +178,7 @@ def get_assembly_line_pattern(stripped):
     return re.compile(r'<[+-](\d+)>:\W+(.+)$')
 
 
-def parse_lines(lines, skip_calls): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
-    # TODO: Pylint complexity warnings disabled. When refactored see can we get rid of any.
+def parse_lines(lines, skip_calls):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     stripped, function_name = get_stripped_and_function_name(lines[0])
     # Dict key contains address where the jump begins and value which address
     # to jump to. This also includes calls.

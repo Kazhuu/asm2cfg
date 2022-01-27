@@ -13,7 +13,7 @@ import gdb
 from asm2cfg import asm2cfg
 
 
-class SkipCalls(gdb.Parameter): # pylint: disable=too-few-public-methods
+class SkipCalls(gdb.Parameter):  # pylint: disable=too-few-public-methods
     """
     Set \'on\' to prevent function calls from splitting assembly to further
     blocks. This will provide speedup when rendering CFG if function is
@@ -26,7 +26,7 @@ class SkipCalls(gdb.Parameter): # pylint: disable=too-few-public-methods
         self.show_doc = SkipCalls.__doc__
 
 
-class ViewCfg(gdb.Command): # pylint: disable=too-few-public-methods
+class ViewCfg(gdb.Command):  # pylint: disable=too-few-public-methods
     """
     Draw an assembly control-flow graph (CFG) of the currently executed
     function. If function is big and CFG rendering takes too long, try to
@@ -37,7 +37,7 @@ class ViewCfg(gdb.Command): # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__('viewcfg', gdb.COMMAND_USER)
 
-    def invoke(self, _arg, _from_tty): # pylint: disable=no-self-use
+    def invoke(self, _arg, _from_tty):  # pylint: disable=no-self-use
         """ Called by GDB when viewcfg command is invoked """
         try:
             assembly_lines = gdb.execute('disassemble', from_tty=False, to_string=True).split('\n')
@@ -51,7 +51,7 @@ class ViewCfg(gdb.Command): # pylint: disable=too-few-public-methods
             raise gdb.GdbError(ex)
 
 
-class SaveCfg(gdb.Command): # pylint: disable=too-few-public-methods
+class SaveCfg(gdb.Command):  # pylint: disable=too-few-public-methods
     """
     Save an assembly control-flow graph (CFG) of the currently executed
     function. If function is big and CFG rendering takes too long, try to
@@ -61,7 +61,7 @@ class SaveCfg(gdb.Command): # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__('savecfg', gdb.COMMAND_USER)
 
-    def invoke(self, _arg, _from_tty): # pylint: disable=no-self-use
+    def invoke(self, _arg, _from_tty):  # pylint: disable=no-self-use
         """ Called by GDB when savecfg command is invoked """
         try:
             assembly_lines = gdb.execute('disassemble', from_tty=False, to_string=True).split('\n')
