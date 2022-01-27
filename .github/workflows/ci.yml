@@ -1,7 +1,3 @@
-# TODO:
-# * Semmle (lgtm.com)
-# * Pylint
-
 name: CI
 on:
   push:
@@ -41,8 +37,10 @@ jobs:
       run: |
         python3 -m pip install pipenv
         pipenv install --dev
-    - name: Linting
+    - name: flake8
       run: pipenv run flake8
+    - name: pylint
+      run: pipenv run pylint src
   Coverage:
     needs: [Lint, Baseline]
     runs-on: ubuntu-latest
