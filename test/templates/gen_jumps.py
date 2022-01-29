@@ -21,7 +21,7 @@ for gdb, pic, opt, strip in itertools.product([False, True],
     pic_type = 'position-INdependent' if pic else 'position-dependent'
     opt_type = 'optimized' if opt else 'UNoptimized'
     stripped = 'stripped' if strip else 'UNstripped'
-    print(f"Checking {disasm_type} {pic_type} {opt_type} {stripped}")
+    print(f'Checking {disasm_type} {pic_type} {opt_type} {stripped}')
 
     # Generate object code
 

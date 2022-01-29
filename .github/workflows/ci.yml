@@ -40,7 +40,9 @@ jobs:
     - name: flake8
       run: pipenv run flake8
     - name: pylint
-      run: pipenv run pylint src
+      run: |
+        pipenv run pylint src test
+        pipenv run pylint -d duplicate-code,invalid-name test/templates/*.py
   Coverage:
     needs: [Lint, Baseline]
     runs-on: ubuntu-latest

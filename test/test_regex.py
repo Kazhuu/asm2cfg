@@ -1,9 +1,17 @@
+"""
+Unittests of asm2cfg's regexes
+"""
+
 import unittest
 
 from src.asm2cfg import asm2cfg
 
 
 class FunctionHeaderTestCase(unittest.TestCase):
+    """
+    Tests of function header regex
+    """
+
     def test_gdb_unstripped(self):
         line = 'Dump of assembler code for function test_function:'
         strip, fun = asm2cfg.get_stripped_and_function_name(line)
@@ -28,6 +36,10 @@ class FunctionHeaderTestCase(unittest.TestCase):
 
 
 class CallPatternTestCase(unittest.TestCase):
+    """
+    Tests of call instruction regex
+    """
+
     def setUp(self):
         self.strip_regex = asm2cfg.get_call_pattern(True)
         self.unstrip_regex = asm2cfg.get_call_pattern(False)
@@ -144,6 +156,10 @@ class CallPatternTestCase(unittest.TestCase):
 
 
 class JumpPatternTestCase(unittest.TestCase):
+    """
+    Tests of jump instruction regex
+    """
+
     def test_gdb_stripped(self):
         line = '0x000055555555600f:        jmp  0x55555555603d'
         pattern = asm2cfg.get_jump_pattern(True, 'does_not_matter')

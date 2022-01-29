@@ -1,31 +1,34 @@
+"""
+Common code shared by all generators
+"""
+
 import subprocess
 import sys
 import re
 import os
 
-_me = os.path.basename(__file__)
-verbose = 0
+_ME = os.path.basename(__file__)
 
 
 def set_basename(file):
-    global _me
-    _me = file
+    global _ME  # pylint: disable=global-statement
+    _ME = file
 
 
 def error(msg):
     """
     Print nicely-formatted error message and exit.
     """
-    sys.stderr.write(f'{_me}: error: {msg}\n')
+    sys.stderr.write(f'{_ME}: error: {msg}\n')
     sys.exit(1)
 
 
-def _run(cmd, stdin=None):
+def _run(cmd, stdin=None, verbose=0):
     """
     Run process and abort on error.
     """
     if verbose:
-        print(f"{_me}: running command: {' '.join(cmd)}")
+        print(f"{_ME}: running command: {' '.join(cmd)}")
     with subprocess.Popen(cmd, stdin=stdin, stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE) as process:
         out, err = process.communicate()
@@ -65,15 +68,15 @@ def strip_binary(file):
     _run(['strip', '-s', file])
 
 
-def grep(s, regex):
-    lines = s.split('\n')
+def grep(text, regex):
+    lines = text.split('\n')
     return list(filter(lambda s: re.search(regex, s), lines))
 
 
 def find_address(file, name):
     out = _run(['readelf', '-sW', file])
     lines = grep(out, fr'{name}$')
-    assert len(lines) >= 1, f"failed to locate symbol {name} in\n{out}"
+    assert len(lines) >= 1, f'failed to locate symbol {name} in\n{out}'
     line = lines[0]
     #   Num:    Value          Size Type    Bind   Vis      Ndx Name
     #    27: 0000000000001030    11 FUNC    GLOBAL DEFAULT    9 foo
