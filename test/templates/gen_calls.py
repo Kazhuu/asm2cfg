@@ -26,7 +26,7 @@ for gdb, pic, plt, direct, strip in itertools.product([False, True],
     call_type = 'Non-PIC-call' if direct else 'PIC-call'
     strip_type = 'stripped' if strip else 'UNstripped'
     plt_type = 'PLT' if plt else 'PLT-less'
-    print(f"Checking {disasm_type} {pic_type} {plt_type} {call_type} {strip_type}")
+    print(f'Checking {disasm_type} {pic_type} {plt_type} {call_type} {strip_type}')
 
     # Generate object code
 

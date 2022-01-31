@@ -19,7 +19,7 @@ for gdb, pic, strip in itertools.product([False, True],
     disasm_type = 'GDB' if gdb else 'objdump'
     pic_type = 'position-INdependent' if pic else 'position-dependent'
     stripped = 'stripped' if strip else 'UNstripped'
-    print(f"Checking {disasm_type} {pic_type} {stripped}")
+    print(f'Checking {disasm_type} {pic_type} {stripped}')
 
     # Generate object code
 
