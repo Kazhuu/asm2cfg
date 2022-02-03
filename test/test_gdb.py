@@ -52,7 +52,7 @@ def gdb_execute_command(command):
     gdb_script_path = f'{project_root_path}/src/gdb_asm2cfg.py'
     result = subprocess.run(
         ['gdb', '-ex', f'source {gdb_script_path}', '-ex', command, '-ex', 'q'],
-        stdout=subprocess.PIPE, stdin=None, timeout=1, check=True, universal_newlines=True,
+        stdout=subprocess.PIPE, stdin=None, timeout=3, check=True, universal_newlines=True,
     )
     return result
 
