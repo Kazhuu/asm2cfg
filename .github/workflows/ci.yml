@@ -24,7 +24,7 @@ jobs:
       run: |
         sudo add-apt-repository ppa:deadsnakes/ppa
         sudo apt-get update
-        sudo apt-get install ${PYTHON}
+        sudo apt-get install ${PYTHON} gdb -y
         ${PYTHON} -m pip install pipenv
         pipenv install --dev
     - name: Run tests

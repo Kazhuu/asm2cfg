@@ -44,7 +44,7 @@ class GdbTestCase(unittest.TestCase):
         gdb_script_path = "{0}/src/gdb_asm2cfg.py".format(project_root_path)
         result = subprocess.run(
             ["gdb", "-ex", "source {0}".format(gdb_script_path), "-ex", command, "-ex", "q"],
-            stdout=subprocess.PIPE, stdin=None, timeout=1, check=True, text=True,
+            stdout=subprocess.PIPE, stdin=None, timeout=1, check=True, universal_newlines=True,
         )
         return result
 
