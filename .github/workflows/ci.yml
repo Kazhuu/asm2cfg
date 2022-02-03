@@ -53,7 +53,9 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install deps
       run: |
-        python3 -m pip install pipenv
+        # Install graphviz globally because of GDB using global python
+        # installation and not active pipenv.
+        python3 -m pip install pipenv graphviz
         pipenv install --dev
     - name: Run tests
       run: pipenv run pytest --cov-report xml --cov=src test/
