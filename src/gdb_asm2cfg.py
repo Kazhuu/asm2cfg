@@ -22,21 +22,23 @@ class SkipCalls(gdb.Parameter):
 
     set_doc = 'Set whether savecfg and viewcfg commands will skip function calls from splitting CFG blocks'
     show_doc = 'Set whether savecfg and viewcfg commands will skip function calls from splitting CFG blocks'
+
     def __init__(self):
         super().__init__('skipcalls', gdb.COMMAND_DATA, gdb.PARAM_BOOLEAN)
         self.value = False
 
     def get_set_string(self):
-        return 'Commands savecfg and viewcfg will skip function calls from splitting CFG blocks: ' + self.value_to_string()
+        return f'Commands savecfg and viewcfg will skip function calls \
+                from splitting CFG blocks: {self.value_to_string()}'
 
     def get_show_string(self, _):
-        return 'Commands savecfg and viewcfg will skip function calls from splitting CFG blocks: ' + self.value_to_string()
+        return f'Commands savecfg and viewcfg will skip function calls \
+                from splitting CFG blocks: {self.value_to_string()}'
 
     def value_to_string(self):
         if self.value:
             return 'on'
-        else:
-            return 'off'
+        return 'off'
 
 
 class ViewCfg(gdb.Command):  # pylint: disable=too-few-public-methods
