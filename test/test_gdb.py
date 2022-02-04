@@ -52,7 +52,7 @@ def test_savecfg():
          'file test/fixtures/simple_program/hello', 'b main',
          'run', 'savecfg']
     )
-    assert os.path.isfile('_start.pdf'), result.stdout
+    assert os.path.isfile('main.pdf'), result.stdout
     # assert 'Saved CFG to a file _start.pdf' in result.stdout, result.stdout
 
 
