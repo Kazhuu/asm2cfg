@@ -24,7 +24,7 @@ jobs:
       run: |
         sudo add-apt-repository ppa:deadsnakes/ppa
         sudo apt-get update
-        sudo apt-get install ${PYTHON} gdb -y
+        sudo apt-get install ${PYTHON} gdb graphviz -y
         # Install graphviz globally because of GDB using global python
         # installation and not active pipenv.
         pip3 install graphviz
@@ -54,7 +54,7 @@ jobs:
     - name: Install deps
       run: |
         sudo apt-get update
-        sudo apt-get install gdb -y
+        sudo apt-get install gdb graphviz -y
         python3 -m pip install pipenv
         pipenv install --dev
         # Install packages to system python because that will be used by GDB.
