@@ -47,8 +47,12 @@ def test_change_skipcalls_value():
 
 
 def test_savecfg():
-    execute_gdb_commands(['set confirm off', 'set breakpoint pending on', 'file ls', 'b _start', 'run', 'savecfg'])
-    assert os.path.isfile('_start.pdf')
+    result = execute_gdb_commands(
+        ['set confirm off', 'set breakpoint pending on',
+         'file test/fixtures/simple_program/hello', 'b main',
+         'run', 'savecfg']
+    )
+    assert os.path.isfile('_start.pdf'), result.stdout
     # assert 'Saved CFG to a file _start.pdf' in result.stdout, result.stdout
 
 
