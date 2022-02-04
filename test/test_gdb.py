@@ -47,7 +47,7 @@ def test_change_skipcalls_value():
 
 
 def test_savecfg():
-    result = execute_gdb_commands(['set confirm off', 'file ls', 'starti', 'help show skipcalls', 'savecfg'])
+    result = execute_gdb_commands(['set confirm off', 'file ls', 'starti', 'savecfg'])
     assert 'Saved CFG to a file _start.pdf' in result.stdout, result.stdout
 
 
@@ -67,7 +67,7 @@ def execute_gdb_commands(commands):
     gdb_command.append('q')
     result = subprocess.run(
         gdb_command, stdout=subprocess.PIPE, stdin=None,
-        stderr=subprocess.DEVNULL, timeout=3, check=True, universal_newlines=True,
+        stderr=None, timeout=3, check=True, universal_newlines=True,
     )
     return result
 
