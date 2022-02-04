@@ -13,17 +13,32 @@ import gdb
 from asm2cfg import asm2cfg
 
 
-class SkipCalls(gdb.Parameter):  # pylint: disable=too-few-public-methods
+class SkipCalls(gdb.Parameter):
+    """Manage skipcalls parameter.
+
+    Usage: set skipcalls
+           set skipcalls off
     """
-    Set \'on\' to prevent function calls from splitting assembly to further
-    blocks. This will provide speedup when rendering CFG if function is
-    big. Current value:"""
+
+    set_doc = 'Set whether savecfg and viewcfg commands will skip function calls from splitting CFG blocks'
+    show_doc = 'Set whether savecfg and viewcfg commands will skip function calls from splitting CFG blocks'
 
     def __init__(self):
         super().__init__('skipcalls', gdb.COMMAND_DATA, gdb.PARAM_BOOLEAN)
         self.value = False
-        self.set_doc = SkipCalls.__doc__
-        self.show_doc = SkipCalls.__doc__
+
+    def get_set_string(self):
+        return f'Commands savecfg and viewcfg will skip function calls \
+                from splitting CFG blocks: {self.value_to_string()}'
+
+    def get_show_string(self, _):
+        return f'Commands savecfg and viewcfg will skip function calls \
+                from splitting CFG blocks: {self.value_to_string()}'
+
+    def value_to_string(self):
+        if self.value:
+            return 'on'
+        return 'off'
 
 
 class ViewCfg(gdb.Command):  # pylint: disable=too-few-public-methods
