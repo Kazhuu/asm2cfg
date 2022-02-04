@@ -7,52 +7,67 @@ import re
 
 
 def test_savecfg_help():
-    result = gdb_execute_command('help savecfg')
+    result = execute_gdb_command('help savecfg')
     assert 'Save an assembly control-flow graph (CFG)' in result.stdout
 
 
 def test_viewcfg_help():
-    result = gdb_execute_command('help viewcfg')
+    result = execute_gdb_command('help viewcfg')
     assert 'Draw an assembly control-flow graph (CFG)' in result.stdout
 
 
 def test_help_set():
-    result = gdb_execute_command('help set')
+    result = execute_gdb_command('help set')
     assert 'set skipcalls -- Set whether savecfg and viewcfg commands will skip function' in result.stdout
 
 
 def test_help_set_skipcalls():
-    result = gdb_execute_command('help set skipcalls')
+    result = execute_gdb_command('help set skipcalls')
     assert 'Set whether savecfg and viewcfg commands will skip function' in result.stdout
 
 
 def test_help_show_skipcalls():
-    result = gdb_execute_command('help show skipcalls')
+    result = execute_gdb_command('help show skipcalls')
     assert 'Set whether savecfg and viewcfg commands will skip function' in result.stdout
 
 
 def test_show_skipcalls():
-    result = gdb_execute_command('show skipcalls')
+    result = execute_gdb_command('show skipcalls')
     assert 'Commands savecfg and viewcfg will' in result.stdout
 
 
 def test_skipcalls_inital_value():
-    result = gdb_execute_command('show skipcalls')
+    result = execute_gdb_command('show skipcalls')
     assert parse_option_value(result.stdout) == 'off'
 
 
 def test_change_skipcalls_value():
-    result = gdb_execute_command('set skipcalls')
+    result = execute_gdb_command('set skipcalls')
     assert parse_option_value(result.stdout) == 'on'
 
 
-def gdb_execute_command(command):
+def test_savecfg():
+    result = execute_gdb_commands(['set breakpoint pending on', 'file ls', 'b _start', 'run', 'savecfg'])
+    assert 'Saved CFG to a file _start.pdf' in result.stdout
+
+
+def execute_gdb_command(command):
+    return execute_gdb_commands([command])
+
+
+def execute_gdb_commands(commands):
     project_root_path = os.getcwd()
     os.environ['PYTHONPATH'] = f'{project_root_path}/src/'
     gdb_script_path = f'{project_root_path}/src/gdb_asm2cfg.py'
+    gdb_command = ['gdb', '-ex', f'source {gdb_script_path}']
+    for command in commands:
+        gdb_command.append('-ex')
+        gdb_command.append(command)
+    gdb_command.append('-ex')
+    gdb_command.append('q')
     result = subprocess.run(
-        ['gdb', '-ex', f'source {gdb_script_path}', '-ex', command, '-ex', 'q'],
-        stdout=subprocess.PIPE, stdin=None, timeout=3, check=True, universal_newlines=True,
+        gdb_command, stdout=subprocess.PIPE, stdin=None,
+        stderr=subprocess.DEVNULL, timeout=3, check=True, universal_newlines=True,
     )
     return result
 

@@ -57,6 +57,10 @@ jobs:
         sudo apt-get install gdb -y
         python3 -m pip install pipenv
         pipenv install --dev
+        # Install packages to system python because that will be used by GDB.
+        # This is needed so we get correct coverage report when testing GDB
+        # integration. Otherwise Python code executed by GDB integration does
+        # not get calculated as covered.
         pipenv run pip freeze > requirements.txt
         pip3 install -r requirements.txt
     - name: Run tests
