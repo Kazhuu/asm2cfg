@@ -48,7 +48,7 @@ def test_change_skipcalls_value():
 
 def test_savecfg():
     result = execute_gdb_commands(['set breakpoint pending on', 'file ls', 'b _start', 'run', 'savecfg'])
-    assert 'Saved CFG to a file _start.pdf' in result.stdout
+    assert 'Saved CFG to a file _start.pdf' in result.stdout, result.stdout
 
 
 def execute_gdb_command(command):
