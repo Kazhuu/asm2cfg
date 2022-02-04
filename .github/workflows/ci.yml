@@ -55,10 +55,10 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install gdb -y
-        # Install graphviz globally because of GDB using global python
-        # installation and not active pipenv.
-        python3 -m pip install pipenv graphviz
+        python3 -m pip install pipenv
         pipenv install --dev
+        pipenv run pip freeze > requirements.txt
+        pip3 install -r requirements.txt
     - name: Run tests
       run: pipenv run pytest --cov-report xml --cov=src test/
     - name: Codecov
