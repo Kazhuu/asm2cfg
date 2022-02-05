@@ -53,7 +53,28 @@ def test_savecfg():
          'run', 'savecfg']
     )
     assert os.path.isfile('main.pdf'), result.stdout
-    # assert 'Saved CFG to a file _start.pdf' in result.stdout, result.stdout
+    assert 'Saved CFG to a file main.pdf' in result.stdout, result.stdout
+
+
+def test_viewcfg():
+    stdout = ''
+    try:
+        result = execute_gdb_commands(
+            ['set confirm off', 'set breakpoint pending on',
+             'file test/fixtures/simple_program/hello', 'b main',
+             'run', 'viewcfg']
+        )
+        stdout = result.stdout
+    except subprocess.TimeoutExpired as ex:
+        stdout = str(ex.stdout)
+    viewcfg_pattern = re.compile(r'Opening a file (.*) with default viewer')
+    result = viewcfg_pattern.search(stdout)
+
+    assert result is not None, stdout
+
+    temporary_filename = result.group(1)
+
+    assert os.path.isfile(temporary_filename), temporary_filename
 
 
 def execute_gdb_command(command):
@@ -72,7 +93,7 @@ def execute_gdb_commands(commands):
     gdb_command.append('q')
     result = subprocess.run(
         gdb_command, stdout=subprocess.PIPE, stdin=None,
-        stderr=None, timeout=3, check=True, universal_newlines=True,
+        stderr=None, timeout=2, check=True, universal_newlines=True,
     )
     return result
 

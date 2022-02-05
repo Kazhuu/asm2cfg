@@ -12,6 +12,7 @@ Pipfile.lock
 # Vim files
 .*swp
 Session.vim
+tags
 
 # GDB history
 .gdb_history
@@ -22,3 +23,4 @@ coverage.xml
 
 # Test files
 a.out
+main.pdf
