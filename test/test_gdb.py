@@ -4,7 +4,6 @@ Test cases to test GDB integration.
 import subprocess
 import os
 import re
-import pytest
 
 
 def test_savecfg_help():
