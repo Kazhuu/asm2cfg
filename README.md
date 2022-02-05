@@ -35,6 +35,7 @@ contribute, check [Development](#development) how to get started.
   * [Python Environment](#python-environment)
   * [Testing](#testing)
   * [Code Linting](#code-linting)
+  * [Command-Line Interface](#command-line-interface)
   * [GDB Integration](#gdb-integration)
   * [Current Development Goals](#current-development-goals)
 
@@ -272,6 +273,15 @@ pylint src test
 ```
 
 Both commands should not print any errors.
+
+### Command-Line Interface
+
+To test command-line interface of asm2cfg wihtout installing the package. You
+can execute module directly. For example to print help
+
+```
+python -m src.asm2cfg -h
+```
 
 ### GDB Integration
 
