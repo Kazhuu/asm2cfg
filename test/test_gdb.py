@@ -58,21 +58,24 @@ def test_savecfg():
 
 
 def test_viewcfg():
-    with pytest.raises(subprocess.TimeoutExpired) as excinfo:
-        execute_gdb_commands(
+    stdout = ''
+    try:
+        result = execute_gdb_commands(
             ['set confirm off', 'set breakpoint pending on',
              'file test/fixtures/simple_program/hello', 'b main',
              'run', 'viewcfg']
         )
-    stdout = str(excinfo.value.stdout)
-    viewcfg_pattern = re.compile(r'Opening a file (.*) with')
+        stdout = result.stdout
+    except subprocess.TimeoutExpired as ex:
+        stdout = str(ex.stdout)
+    viewcfg_pattern = re.compile(r'Opening a file (.*) with default viewer')
     result = viewcfg_pattern.search(stdout)
 
-    assert result is not None
+    assert result is not None, stdout
 
     temporary_filename = result.group(1)
 
-    assert os.path.isfile(temporary_filename), stdout
+    assert os.path.isfile(temporary_filename), temporary_filename
 
 
 def execute_gdb_command(command):
