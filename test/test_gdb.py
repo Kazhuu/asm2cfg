@@ -4,6 +4,7 @@ Test cases to test GDB integration.
 import subprocess
 import os
 import re
+import pytest
 
 
 def test_savecfg_help():
@@ -53,7 +54,25 @@ def test_savecfg():
          'run', 'savecfg']
     )
     assert os.path.isfile('main.pdf'), result.stdout
-    # assert 'Saved CFG to a file _start.pdf' in result.stdout, result.stdout
+    assert 'Saved CFG to a file main.pdf' in result.stdout, result.stdout
+
+
+def test_viewcfg():
+    with pytest.raises(subprocess.TimeoutExpired) as excinfo:
+        execute_gdb_commands(
+            ['set confirm off', 'set breakpoint pending on',
+             'file test/fixtures/simple_program/hello', 'b main',
+             'run', 'viewcfg']
+        )
+    stdout = str(excinfo.value.stdout)
+    viewcfg_pattern = re.compile(r'Opening a file (.*) with')
+    result = viewcfg_pattern.search(stdout)
+
+    assert result is not None
+
+    temporary_filename = result.group(1)
+
+    assert os.path.isfile(temporary_filename), stdout
 
 
 def execute_gdb_command(command):
@@ -72,7 +91,7 @@ def execute_gdb_commands(commands):
     gdb_command.append('q')
     result = subprocess.run(
         gdb_command, stdout=subprocess.PIPE, stdin=None,
-        stderr=None, timeout=3, check=True, universal_newlines=True,
+        stderr=None, timeout=2, check=True, universal_newlines=True,
     )
     return result
 
