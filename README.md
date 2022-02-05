@@ -210,19 +210,19 @@ guidance how to setup development environment and test things locally.
 
 For development this project manages packages with pipenv. Pipenv is a tool to
 manage Python virtual environments and packages with much less pain compared to
-normal pip and requirements.txt file usage.
+normal pip and virtualenv usage.
 
 Install pipenv for your system following the guide
 [here](https://pipenv.pypa.io/en/latest/).
 
-After installing pipenv. To create virtual environment and install all required
-packages to it, at project root run
+After installing pipenv. Create virtual environment and install all required
+packages to it. Run following at project root
 
 ```
 pipenv install -d
 ```
 
-Now you can activate the environment with
+Now you can activate the virtual environment with
 
 ```
 pipenv shell
@@ -243,7 +243,7 @@ This project uses [pytest](https://pypi.org/project/pytest/) for testing. Some
 test are written using Python's own unittest testing framework, but they work
 with pytest out of the box. Pytest style is preferred way to write tests.
 
-To run tests use from project root just use `pytest` or
+To run tests from project root, use `pytest` or
 
 ```
 pipenv run pytest
@@ -252,7 +252,7 @@ pipenv run pytest
 During testing dot viewer might be opened if you have it installed. This is
 because GDB integration command `viewcfg` is tested, which will open external
 dot viewer. Just close it after it's opened. It should not affect the test run
-results itself.
+itself.
 
 ### Code Linting
 
@@ -281,8 +281,8 @@ code from this repository!
 
 Also pipenv cannot be used with GDB. You need to install required packages to
 your system's Python pip. This is because your installed GDB is linked against
-system's Python interpreter and will use it instead of active virtual
-environment. If packages are not installed to your system's pip. You will likely
+system's Python interpreter and will use it, instead of active virtual
+environment. If packages are not installed to your system's pip. You are likely
 to receive following error messages when trying to use asm2cfg with GDB
 
 ```
@@ -314,7 +314,7 @@ lines. If you encounter such problems please open an issue.
 
 Also current goal is to improve test coverage and then focus on refactoring the
 project to make it easier to add additional assembly support and cover all x86
-cases as well. Also objdump support is planned.
+cases. Also objdump support is planned.
 
 If you want to talk to me, you can contact me at Discord with name
 `Kazhuu#3121`.
