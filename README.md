@@ -17,7 +17,8 @@ Program doesn't care about the assembly language. Python will just read the jump
 addresses and instructions to determine the control flow from that. Support for
 both stripped and non-stripped assembly dumps. Tested with x86 assembly. So not
 sure does this work with other assembly languages. If you have any suggestions
-or improvements. Please open an issue or create a pull request.
+or find bugs, please open an issue or create a pull request. If you want to
+contribute, check [Development](#development) how to get started.
 
 ## Table of Content
 
@@ -30,6 +31,13 @@ or improvements. Please open an issue or create a pull request.
   * [Disassemble Function](#disassemble-function)
   * [Draw CFG](#draw-cfg)
 * [Examples](#examples)
+* [Development](#development)
+  * [Python Environment](#python-environment)
+  * [Testing](#testing)
+  * [Code Linting](#code-linting)
+  * [Command-Line Interface](#command-line-interface)
+  * [GDB Integration](#gdb-integration)
+  * [Current Development Goals](#current-development-goals)
 
 <!-- vim-markdown-toc -->
 
@@ -193,3 +201,130 @@ File `att_syntax.asm` is an example of non-stripped AT&T assembly.
 File `huge.asm` is a large stripped
 assembly function and its corresponding output `main.pdf`. This can be used to
 test processing time of big functions.
+
+## Development
+
+You want to contribute? You're very welcome to do so! This section will give you
+guidance how to setup development environment and test things locally.
+
+### Python Environment
+
+For development this project manages packages with pipenv. Pipenv is a tool to
+manage Python virtual environments and packages with much less pain compared to
+normal pip and virtualenv usage.
+
+Install pipenv for your system following the guide
+[here](https://pipenv.pypa.io/en/latest/).
+
+After installing pipenv. Create virtual environment and install all required
+packages to it. Run following at project root
+
+```
+pipenv install -d
+```
+
+Now you can activate the virtual environment with
+
+```
+pipenv shell
+```
+
+Now your `python` and `pip` commands will correspond to created virtual environment
+instead of your system's Python installation.
+
+To deactivate the environment, use
+
+```
+exit
+```
+
+### Testing
+
+This project uses [pytest](https://pypi.org/project/pytest/) for testing. Some
+test are written using Python's own unittest testing framework, but they work
+with pytest out of the box. Pytest style is preferred way to write tests.
+
+To run tests from project root, use `pytest` or
+
+```
+pipenv run pytest
+```
+
+During testing dot viewer might be opened if you have it installed. This is
+because GDB integration command `viewcfg` is tested, which will open external
+dot viewer. Just close it after it's opened. It should not affect the test run
+itself.
+
+### Code Linting
+
+Project uses [flake8](https://flake8.pycqa.org/en/latest/) and
+[pylint](https://pylint.org/) for code linting.
+
+To run flake8, use
+
+```
+flake8
+```
+
+And to run pylint use
+
+```
+pylint src test
+```
+
+Both commands should not print any errors.
+
+### Command-Line Interface
+
+To test command-line interface of asm2cfg wihtout installing the package. You
+can execute module directly. For example to print help
+
+```
+python -m src.asm2cfg -h
+```
+
+### GDB Integration
+
+Before testing GDB functionality, make sure asm2cfg is not installed with pip!
+This can lead to GDB using code from pip installed asm2cfg package instead of
+code from this repository!
+
+Also pipenv cannot be used with GDB. You need to install required packages to
+your system's Python pip. This is because your installed GDB is linked against
+system's Python interpreter and will use it, instead of active virtual
+environment. If packages are not installed to your system's pip. You are likely
+to receive following error messages when trying to use asm2cfg with GDB
+
+```
+ModuleNotFoundError: No module named 'graphviz'
+```
+
+To fix this, install required packages to your system's pip without active
+virtual environment. Currently GDB integration only requires graphviz.
+
+```
+pip install graphviz
+```
+
+To use asm2cfg GDB related functionality. Use following line from
+project root.
+
+```
+PYTHONPATH=${PWD}/src gdb -ex 'source src/gdb_asm2cfg.py'
+```
+
+This will set Python import path so that GDB can import code from this
+repository without installing the package. After this you should be able to use
+commands `viewcfg` and `savecfg`.
+
+### Current Development Goals
+
+There are known problems that asm2cfg will not fully support all x86 assembly
+lines. If you encounter such problems please open an issue.
+
+Also current goal is to improve test coverage and then focus on refactoring the
+project to make it easier to add additional assembly support and cover all x86
+cases. Also objdump support is planned.
+
+If you want to talk to me, you can contact me at Discord with name
+`Kazhuu#3121`.
