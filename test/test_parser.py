@@ -17,7 +17,117 @@ class ParseLineTestCase(unittest.TestCase):
     Tests of parse_line function
     """
 
-    @unittest.expectedFailure
+    def test_simple_inst(self):
+        line = '0x000055555556f957 <+7>:	push   %r14'
+        i = asm2cfg.parse_line(line, 1)
+
+        self.assertFalse(i.is_call())
+        self.assertFalse(i.is_jump())
+        self.assertFalse(i.is_unconditional_jump())
+
+        self.assertIsNot(i, None)
+        self.assertEqual(i.body, 'push   %r14')
+        self.assertEqual(i.lineno, 1)
+        self.assertIsNot(i.address, None)
+        self.assertEqual(i.address.abs, 0x000055555556f957)
+        self.assertIs(i.address.base, None)
+        self.assertEqual(i.address.offset, 7)
+        self.assertIs(i.target, None)
+
+    def test_jump(self):
+        line = '''\
+0x00007ffff7fbf26b <+395>:	jmp    0x7ffff7fbf55d <test_function+1149>\
+'''
+        i = asm2cfg.parse_line(line, 1)
+        self.assertIsNot(i, None)
+
+        self.assertFalse(i.is_call())
+        self.assertTrue(i.is_jump())
+        self.assertTrue(i.is_unconditional_jump())
+
+        self.assertEqual(i.body, 'jmp    0x7ffff7fbf55d')
+        self.assertEqual(i.lineno, 1)
+        self.assertIsNot(i.address, None)
+        self.assertEqual(i.address.abs, 0x00007ffff7fbf26b)
+        self.assertIs(i.address.base, None)
+        self.assertEqual(i.address.offset, 395)
+        self.assertIsNot(i.target, None)
+        self.assertIs(i.target.abs, None)  # FIXME
+        self.assertEqual(i.target.base, 'test_function')
+        self.assertEqual(i.target.offset, 1149)
+
+    def test_branch(self):
+        line = '''\
+0x00007ffff7fbf565 <+1157>:	je     0x7ffff7fbf635 <test_function+1365>\
+'''
+        i = asm2cfg.parse_line(line, 1)
+
+        self.assertFalse(i.is_call())
+        self.assertTrue(i.is_jump())
+        self.assertFalse(i.is_unconditional_jump())
+
+        self.assertIsNot(i, None)
+        self.assertEqual(i.body, 'je     0x7ffff7fbf635')
+        self.assertEqual(i.lineno, 1)
+        self.assertIsNot(i.address, None)
+        self.assertEqual(i.address.abs, 0x00007ffff7fbf565)
+        self.assertIs(i.address.base, None)
+        self.assertEqual(i.address.offset, 1157)
+        self.assertIsNot(i.target, None)
+        self.assertIs(i.target.abs, None)  # FIXME
+        self.assertEqual(i.target.base, 'test_function')
+        self.assertEqual(i.target.offset, 1365)
+
+    def test_call(self):
+        line = '''\
+0x000000000002ec0f <+63>:	callq  0x2eab0 <__sigsetjmp@plt>
+'''
+        i = asm2cfg.parse_line(line, 1)
+
+        self.assertTrue(i.is_call())
+        self.assertFalse(i.is_jump())
+        self.assertFalse(i.is_unconditional_jump())
+
+        self.assertIsNot(i, None)
+        self.assertEqual(i.body, 'callq  0x2eab0')
+        self.assertEqual(i.lineno, 1)
+        self.assertIsNot(i.address, None)
+        self.assertEqual(i.address.abs, 0x000000000002ec0f)
+        self.assertIs(i.address.base, None)
+        self.assertEqual(i.address.offset, 63)
+        self.assertIsNot(i.target, None)
+        self.assertIs(i.target.abs, None)  # FIXME
+        self.assertEqual(i.target.base, '__sigsetjmp@plt')
+        self.assertEqual(i.target.offset, 0)
+
+    def test_call_stripped(self):
+        line = '''\
+ 0x000055555556f9b0 <+96>:	call   *0x2731a(%rip)        # 0x555555596cd0
+'''
+        i = asm2cfg.parse_line(line, 1)
+
+        self.assertTrue(i.is_call())
+        self.assertFalse(i.is_jump())
+        self.assertFalse(i.is_unconditional_jump())
+
+        self.assertIsNot(i, None)
+        self.assertEqual(i.body, 'call   *0x2731a(%rip)')
+        self.assertEqual(i.lineno, 1)
+        self.assertIsNot(i.address, None)
+        self.assertEqual(i.address.abs, 0x000055555556f9b0)
+        self.assertIs(i.address.base, None)
+        self.assertEqual(i.address.offset, 96)
+        self.assertIsNot(i.target, None)
+        self.assertEqual(i.target.abs, 0x555555596cd0)
+        self.assertIs(i.target.base, None)
+        self.assertEqual(i.target.offset, 0)
+
+
+class ParseLinesTestCase(unittest.TestCase):
+    """
+    Tests of parse_lines function
+    """
+
     def test_linear_sequence(self):
         lines = '''\
 Dump of assembler code for function main:
@@ -32,7 +142,7 @@ Dump of assembler code for function main:
 
         self.assertEqual(len(blocks), 1)
         _, block = blocks.popitem()
-        self.assertEqual(len(block.instructions), 6)  # FIXME
+        self.assertEqual(len(block.instructions), 6)
         self.assertIs(block.jump_edge, None)
         self.assertIs(block.no_jump_edge, None)
 
