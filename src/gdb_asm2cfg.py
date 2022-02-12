@@ -56,7 +56,7 @@ class ViewCfg(gdb.Command):  # pylint: disable=too-few-public-methods
         """ Called by GDB when viewcfg command is invoked """
         try:
             assembly_lines = gdb.execute('disassemble', from_tty=False, to_string=True).split('\n')
-            [function_name, basic_blocks] = asm2cfg.parse_lines(assembly_lines, gdb.parameter('skipcalls'))
+            function_name, basic_blocks = asm2cfg.parse_lines(assembly_lines, gdb.parameter('skipcalls'))
             asm2cfg.draw_cfg(function_name, basic_blocks, view=True)
         # Catch error coming from GDB side before other errors.
         except gdb.error as ex:
@@ -80,7 +80,7 @@ class SaveCfg(gdb.Command):  # pylint: disable=too-few-public-methods
         """ Called by GDB when savecfg command is invoked """
         try:
             assembly_lines = gdb.execute('disassemble', from_tty=False, to_string=True).split('\n')
-            [function_name, basic_blocks] = asm2cfg.parse_lines(assembly_lines, gdb.parameter('skipcalls'))
+            function_name, basic_blocks = asm2cfg.parse_lines(assembly_lines, gdb.parameter('skipcalls'))
             asm2cfg.draw_cfg(function_name, basic_blocks, view=False)
         # Catch error coming from GDB side before other errors.
         except gdb.error as ex:

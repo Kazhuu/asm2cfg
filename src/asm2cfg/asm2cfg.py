@@ -120,8 +120,8 @@ def get_stripped_and_function_name(line):
         print('First line of the file does not contain a function name or valid memory range')
         sys.exit(1)
     if function_name is None:
-        return [True, f'{memory_range[1]}-{memory_range[2]}']
-    return [False, function_name[1]]
+        return True, f'{memory_range[1]}-{memory_range[2]}'
+    return False, function_name[1]
 
 
 def get_call_pattern(stripped):
@@ -264,7 +264,7 @@ def parse_lines(lines, skip_calls):  # pylint: disable=too-many-locals,too-many-
         end_block.add_instruction('end of function')
         previous_jump_block.add_no_jump_edge(end_block.key)
         basic_blocks[end_block.key] = end_block
-    return [function_name, basic_blocks]
+    return function_name, basic_blocks
 
 
 def draw_cfg(function_name, basic_blocks, view):
