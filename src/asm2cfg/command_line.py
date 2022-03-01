@@ -21,5 +21,5 @@ def main():
     args = parser.parse_args()
     print('If function CFG rendering takes too long, try to skip function calls with -c flag')
     lines = asm2cfg.read_lines(args.assembly_file)
-    [function_name, basic_blocks] = asm2cfg.parse_lines(lines, args.skip_calls)
+    function_name, basic_blocks = asm2cfg.parse_lines(lines, args.skip_calls)
     asm2cfg.draw_cfg(function_name, basic_blocks, args.view)

@@ -35,205 +35,156 @@ class FunctionHeaderTestCase(unittest.TestCase):
         self.assertEqual(fun, 'bar')
 
 
-class CallPatternTestCase(unittest.TestCase):
+class ParseAddressTestCase(unittest.TestCase):
     """
-    Tests of call instruction regex
+    Tests of parse_address function
     """
 
-    def setUp(self):
-        self.strip_regex = asm2cfg.get_call_pattern(True)
-        self.unstrip_regex = asm2cfg.get_call_pattern(False)
+    def test_absolute(self):
+        line = '0x000055555557259c:	XYZ'
+        address, rest = asm2cfg.parse_address(line)
+
+        self.assertIsNot(address, None)
+        self.assertEqual(address.abs, 0x55555557259c)
+        self.assertIs(address.base, None)
+        self.assertIs(address.offset, None)
+        self.assertEqual(rest, '	XYZ')
+
+    def test_relative(self):
+        line = '0x000055555557259c <+11340>:	XYZ'
+        address, rest = asm2cfg.parse_address(line)
+
+        self.assertIsNot(address, None)
+        self.assertEqual(address.abs, 0x55555557259c)
+        self.assertIs(address.base, None)
+        self.assertEqual(address.offset, 11340)
+        self.assertEqual(rest, '	XYZ')
+
+
+class ParseBodyTestCase(unittest.TestCase):
+    """
+    Tests of asm2cfg.parse_body function
+    """
 
     def test_gdb_stripped_known(self):
-        line = '0x000055555557259c:	addr32 call 0x55555558add0 <_Z19exportDebugifyStats>'
-        call_match = self.strip_regex.match(line)
+        line = '	call 0x55555558add0 <_Z19exportDebugifyStats>'
+        body, opcode, ops, rest = asm2cfg.parse_body(line)
 
-        self.assertIsNot(call_match, None)
-        self.assertEqual(call_match[1], '55555557259c')
-        self.assertEqual(call_match[2], '0x55555558add0 <_Z19exportDebugifyStats>')  # FIXME: keep just symbolic name?
-
-    @unittest.expectedFailure
-    def test_gdb_unstripped_known(self):
-        line = '0x000055555557259c <+11340>:	addr32 call 0x55555558add0 <_Z19exportDebugifyStats>'
-        call_match = self.unstrip_regex.match(line)
-
-        self.assertIsNot(call_match, None)  # FIXME
-        self.assertEqual(call_match[1], '11340')
-        self.assertEqual(call_match[2], '???')
+        self.assertIsNot(body, None)
+        self.assertEqual(body, 'call 0x55555558add0')
+        self.assertEqual(opcode, 'call')
+        self.assertEqual(ops, ['0x55555558add0'])
+        self.assertEqual(rest, '<_Z19exportDebugifyStats>')
 
     def test_gdb_stripped_pic(self):
-        line = '0x000055555556fd8c:    call   *0x26a16(%rip)        # 0x5555555967a8'
-        call_match = self.strip_regex.match(line)
+        line = '    call   *0x26a16(%rip)        # 0x5555555967a8'
+        body, opcode, ops, rest = asm2cfg.parse_body(line)
 
-        self.assertIsNot(call_match, None)
-        self.assertEqual(call_match[1], '55555556fd8c')
-        self.assertEqual(call_match[2], '*0x26a16(%rip)        # 0x5555555967a8')  # FIXME: remove trash
+        self.assertIsNot(body, None)
+        self.assertEqual(body, 'call   *0x26a16(%rip)')
+        self.assertEqual(opcode, 'call')
+        self.assertEqual(ops, ['*0x26a16(%rip)'])
+        self.assertEqual(rest, '# 0x5555555967a8')
 
-    @unittest.expectedFailure
-    def test_gdb_stripped_fnoplt(self):
-        line = '0x0000000000001018 <bar+13>:	callq  *0x2fda(%rip)        # 0x3ff8'
-        call_match = self.strip_regex.match(line)
-
-        self.assertIsNot(call_match, None)
-        self.assertEqual(call_match[1], '1018')
-        self.assertEqual(call_match[2], '3ff8')
-
-    @unittest.expectedFailure
-    def test_gdb_unstripped_fnoplt(self):
-        line = '0x0000000000001018 <+13>:	callq  *0x2fda(%rip)        # 0x3ff8'
-        call_match = self.strip_regex.match(line)
-
-        self.assertIsNot(call_match, None)
-        self.assertEqual(call_match[1], '13')
-        self.assertEqual(call_match[2], '3ff8')
-
-    @unittest.expectedFailure
-    def test_objdump_fnoplt(self):
-        line = '1018:▸  ff 15 da 2f 00 00    ▸  callq  *0x2fda(%rip)        # 3ff8 <foo+0x2ff8>'
-        call_match = self.strip_regex.match(line)
-
-        self.assertIsNot(call_match, None)
-        self.assertEqual(call_match[1], '1018')
-        self.assertEqual(call_match[2], '3ff8')
-
-    @unittest.expectedFailure
-    def test_objdump_plt(self):
-        line = '1048:	e8 d3 ff ff ff       	callq  1020 <foo@plt>'
-        call_match = self.strip_regex.match(line)
-
-        self.assertIsNot(call_match, None)
-        self.assertEqual(call_match[1], '1048')
-        self.assertEqual(call_match[2], '1020 <foo@plt>')
-
-    @unittest.expectedFailure
     def test_gdb_plt(self):
-        line = '0x0000000000001048 <bar+13>:	callq  0x1020 <foo@plt>'
-        call_match = self.strip_regex.match(line)
+        line = '	callq  0x1020 <foo@plt>'
+        body, opcode, ops, rest = asm2cfg.parse_body(line)
 
-        self.assertIsNot(call_match, None)
-        self.assertEqual(call_match[1], '1048')
-        self.assertEqual(call_match[2], 'callq  0x1020 <foo@plt>')
+        self.assertIsNot(body, None)
+        self.assertEqual(body, 'callq  0x1020')
+        self.assertEqual(opcode, 'callq')
+        self.assertEqual(ops, ['0x1020'])
+        self.assertEqual(rest, '<foo@plt>')
 
     def test_gdb_stripped_nonpic(self):
-        line = '0x0000555555556188:	call   0x555555555542'
-        call_match = self.strip_regex.match(line)
+        line = '	call   0x555555555542'
+        body, opcode, ops, rest = asm2cfg.parse_body(line)
 
-        self.assertIsNot(call_match, None)
-        self.assertEqual(call_match[1], '555555556188')
-        self.assertEqual(call_match[2], '0x555555555542')
+        self.assertIsNot(body, None)
+        self.assertEqual(body, 'call   0x555555555542')
+        self.assertEqual(opcode, 'call')
+        self.assertEqual(ops, ['0x555555555542'])
+        self.assertEqual(rest, '')
 
-    @unittest.expectedFailure
     def test_gdb_indirect_call(self):
-        line = '0x0000000000001013 <+19>:	callq  *(%rsi)'
-        call_match = self.strip_regex.match(line)
+        line = '	callq  *(%rsi)'
+        body, opcode, ops, rest = asm2cfg.parse_body(line)
 
-        self.assertIsNot(call_match, None)
-        self.assertEqual(call_match[1], '19')
-        self.assertEqual(call_match[2], '')
-
-        line = '0x0000000000001013 <+19>:	callq  *0x8(%rbx)'
-        call_match = self.strip_regex.match(line)
-
-        self.assertIsNot(call_match, None)
-        self.assertEqual(call_match[1], '19')
-        self.assertEqual(call_match[2], '')
-
-    @unittest.expectedFailure
-    def test_objdump_indirect_call(self):
-        line = '1013:	ff 16                	callq  *(%rsi)'
-        call_match = self.strip_regex.match(line)
-
-        self.assertIsNot(call_match, None)
-        self.assertEqual(call_match[1], '1013')
-        self.assertEqual(call_match[2], '')
-
-        line = '1013:	ff 16                	callq  *0x8(%rbx)'
-        call_match = self.strip_regex.match(line)
-
-        self.assertIsNot(call_match, None)
-        self.assertEqual(call_match[1], '1013')
-        self.assertEqual(call_match[2], '')
+        self.assertIsNot(body, None)
+        self.assertEqual(body, 'callq  *(%rsi)')
+        self.assertEqual(opcode, 'callq')
+        self.assertEqual(ops, ['*(%rsi)'])
+        self.assertEqual(rest, '')
 
 
-class JumpPatternTestCase(unittest.TestCase):
+class ParseTargetTestCase(unittest.TestCase):
     """
-    Tests of jump instruction regex
+    Tests of parse_address function
     """
 
-    def test_gdb_stripped(self):
-        line = '0x000055555555600f:        jmp  0x55555555603d'
-        pattern = asm2cfg.get_jump_pattern(True, 'does_not_matter')
-        jump_match = pattern.search(line)
+    def test_with_offset(self):
+        line = '<_Z19exportDebugifyStats+123>'
+        address, rest = asm2cfg.parse_target(line)
 
-        self.assertIsNot(jump_match, None)
-        self.assertEqual(jump_match[1], '55555555600f')
-        self.assertEqual(jump_match[2], '55555555603d')
+        self.assertIsNot(address, None)
+        self.assertIs(address.abs, None)
+        self.assertEqual(address.base, '_Z19exportDebugifyStats')
+        self.assertEqual(address.offset, 123)
+        self.assertEqual(rest, '')
 
-    def test_gdb_non_stripped(self):
-        line = '0x00007ffff7fbf124 <+68>:  jmp  0x7ffff7fbf7c2 <test_function+1762>'
-        pattern = asm2cfg.get_jump_pattern(False, 'test_function')
-        jump_match = pattern.search(line)
+    def test_with_neg_offset(self):
+        line = '<_Z19exportDebugifyStats-123>'
+        address, rest = asm2cfg.parse_target(line)
 
-        self.assertIsNot(jump_match, None)
-        self.assertEqual(jump_match[1], '68')
-        self.assertEqual(jump_match[2], '1762')
+        self.assertIsNot(address, None)
+        self.assertIs(address.abs, None)
+        self.assertEqual(address.base, '_Z19exportDebugifyStats')
+        self.assertEqual(address.offset, -123)
+        self.assertEqual(rest, '')
 
-    @unittest.expectedFailure
-    def test_gdb_conditional(self):
-        line = '0x000000000000100f <+15>:	jle    0x1019 <bar+25>'
-        pattern = asm2cfg.get_jump_pattern(False, 'test_function')
-        jump_match = pattern.search(line)
+    def test_without_offset(self):
+        line = '<_Z19exportDebugifyStats>'
+        address, rest = asm2cfg.parse_target(line)
 
-        self.assertIsNot(jump_match, None)
-        self.assertEqual(jump_match[1], '15')
-        self.assertEqual(jump_match[2], '25')
+        self.assertIsNot(address, None)
+        self.assertIs(address.abs, None)
+        self.assertEqual(address.base, '_Z19exportDebugifyStats')
+        self.assertEqual(address.offset, 0)
+        self.assertEqual(rest, '')
 
-    @unittest.expectedFailure
-    def test_objdump_unconditional(self):
-        line = '1017:	eb 06                	jmp    101f <bar+0x1f>'
-        pattern = asm2cfg.get_jump_pattern(False, 'does_not_matter')
-        jump_match = pattern.search(line)
 
-        self.assertIsNot(jump_match, None)
-        self.assertEqual(jump_match[1], '1017')
-        self.assertEqual(jump_match[2], '0x1f')
+class ParseImmTestCase(unittest.TestCase):
+    """
+    Tests of parse_imm function
+    """
 
-    @unittest.expectedFailure
-    def test_objdump_conditional(self):
-        line = '100f:	7e 08                	jle    1019 <bar+0x19>'
-        pattern = asm2cfg.get_jump_pattern(False, 'does_not_matter')
-        jump_match = pattern.search(line)
+    def test_absolute(self):
+        line = '# 0x5555555967a8'
+        address, rest = asm2cfg.parse_imm(line)
 
-        self.assertIsNot(jump_match, None)
-        self.assertEqual(jump_match[1], '100f')
-        self.assertEqual(jump_match[2], '0x19')
+        self.assertIsNot(address, None)
+        self.assertEqual(address.abs, 0x5555555967a8)
+        self.assertIs(address.base, None)
+        self.assertIs(address.offset, 0)
+        self.assertEqual(rest, '')
 
-    @unittest.expectedFailure
-    def test_gdb_jumptable(self):
-        line = '0x000000000000101d <+29>:	notrack jmpq *%rax'
-        pattern = asm2cfg.get_jump_pattern(False, 'test_function')
-        jump_match = pattern.search(line)
+    def test_symbolic(self):
+        line = '# 0x5555555967a8 <foo>'
+        address, rest = asm2cfg.parse_imm(line)
 
-        self.assertIsNot(jump_match, None)
-        self.assertEqual(jump_match[1], '29')
-        self.assertEqual(jump_match[2], '')
+        self.assertIsNot(address, None)
+        self.assertEqual(address.abs, 0x5555555967a8)
+        self.assertEqual(address.base, 'foo')
+        self.assertIs(address.offset, 0)
+        self.assertEqual(rest, '')
 
     @unittest.expectedFailure
-    def test_objdump_jumptable(self):
-        line = '101d:	3e ff e0             	notrack jmpq *%rax'
-        pattern = asm2cfg.get_jump_pattern(False, 'does_not_matter')
-        jump_match = pattern.search(line)
+    def test_complete(self):
+        line = '# 3ff8 <foo+0x2ff8>'
+        address, rest = asm2cfg.parse_imm(line)
 
-        self.assertIsNot(jump_match, None)
-        self.assertEqual(jump_match[1], '101d')
-        self.assertEqual(jump_match[2], '')
-
-    @unittest.expectedFailure
-    def test_objdump_funnyjump(self):
-        line = '1044:	f2 ff 25 d5 2f 00 00 	bnd jmpq *0x2fd5(%rip)        # 4020 <foo+0x2fd0>'
-        pattern = asm2cfg.get_jump_pattern(False, 'does_not_matter')
-        jump_match = pattern.search(line)
-
-        self.assertIsNot(jump_match, None)
-        self.assertEqual(jump_match[1], '4020')
-        self.assertEqual(jump_match[2], '0x2fd0')
+        self.assertIsNot(address, None)
+        self.assertEqual(address.abs, 0x3ff8)  # FIXME: support hex offsets
+        self.assertEqual(address.base, 'foo')
+        self.assertEqual(address.offset, 0x2ff8)
+        self.assertEqual(rest, '')
