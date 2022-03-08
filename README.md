@@ -115,8 +115,8 @@ time. To have normal behavior again run `set skipcalls off`.
 Pip will install `asm2cfg` command-line tool that can be used as a standalone
 program with the same functionality as from GDB but with external files.
 
-To use as standalone script you first need to dump assembly from GDB to the file
-which is explained below.
+To use as standalone script you first need to dump assembly from GDB or objdump
+to the file which is explained below.
 
 ### Knowing Function Name
 
@@ -158,13 +158,21 @@ gdb -batch -ex 'set breakpoints pending on' -ex 'b test_function' -ex r -ex 'pip
 ```
 
 (the `set breakpoint pending on` command enables pending breakpoints and
-could be added to your `.gdbinit` instead).
+could be added to your `.gdbinit` instead)
 
 For functions from main executable it's enough to do
 
 ```
 gdb -batch -ex 'pipe disassemble test_function | tee test_function.asm' ./test_executable
 ```
+
+You can also extract function's disassembly from `objdump` output:
+
+```
+objdump -d ./test_executable | sed -ne '/<test_function/,/^$/p' > test_executable.asm
+```
+
+(this may be useful for specific non-native targets which lack gdb support).
 
 ### Draw CFG
 
@@ -201,6 +209,9 @@ File `att_syntax.asm` is an example of non-stripped AT&T assembly.
 File `huge.asm` is a large stripped
 assembly function and its corresponding output `main.pdf`. This can be used to
 test processing time of big functions.
+
+Files `objdump.asm` and `stripped_objdump.asm` are the regular and stripped
+objdump-based disassemblies of short functions.
 
 ## Development
 

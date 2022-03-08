@@ -19,11 +19,7 @@ class ParseLineTestCase(unittest.TestCase):
 
     def test_simple_inst(self):
         line = '0x000055555556f957 <+7>:	push   %r14'
-        i = asm2cfg.parse_line(line, 1, 'main')
-
-        self.assertFalse(i.is_call())
-        self.assertFalse(i.is_jump())
-        self.assertFalse(i.is_unconditional_jump())
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB)
 
         self.assertIsNot(i, None)
         self.assertEqual(i.body, 'push   %r14')
@@ -34,16 +30,16 @@ class ParseLineTestCase(unittest.TestCase):
         self.assertEqual(i.address.offset, 7)
         self.assertIs(i.target, None)
 
+        self.assertFalse(i.is_call())
+        self.assertFalse(i.is_jump())
+        self.assertFalse(i.is_unconditional_jump())
+
     def test_jump(self):
         line = '''\
 0x00007ffff7fbf26b <+395>:	jmp    0x7ffff7fbf55d <test_function+1149>\
 '''
-        i = asm2cfg.parse_line(line, 1, 'main')
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB)
         self.assertIsNot(i, None)
-
-        self.assertFalse(i.is_call())
-        self.assertTrue(i.is_jump())
-        self.assertTrue(i.is_unconditional_jump())
 
         self.assertEqual(i.body, 'jmp    0x7ffff7fbf55d')
         self.assertEqual(i.lineno, 1)
@@ -56,15 +52,15 @@ class ParseLineTestCase(unittest.TestCase):
         self.assertEqual(i.target.base, 'test_function')
         self.assertEqual(i.target.offset, 1149)
 
+        self.assertFalse(i.is_call())
+        self.assertTrue(i.is_jump())
+        self.assertTrue(i.is_unconditional_jump())
+
     def test_branch(self):
         line = '''\
 0x00007ffff7fbf565 <+1157>:	je     0x7ffff7fbf635 <test_function+1365>\
 '''
-        i = asm2cfg.parse_line(line, 1, 'main')
-
-        self.assertFalse(i.is_call())
-        self.assertTrue(i.is_jump())
-        self.assertFalse(i.is_unconditional_jump())
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB)
 
         self.assertIsNot(i, None)
         self.assertEqual(i.body, 'je     0x7ffff7fbf635')
@@ -78,15 +74,15 @@ class ParseLineTestCase(unittest.TestCase):
         self.assertEqual(i.target.base, 'test_function')
         self.assertEqual(i.target.offset, 1365)
 
+        self.assertFalse(i.is_call())
+        self.assertTrue(i.is_jump())
+        self.assertFalse(i.is_unconditional_jump())
+
     def test_call(self):
         line = '''\
 0x000000000002ec0f <+63>:	callq  0x2eab0 <__sigsetjmp@plt>
 '''
-        i = asm2cfg.parse_line(line, 1, 'main')
-
-        self.assertTrue(i.is_call())
-        self.assertFalse(i.is_jump())
-        self.assertFalse(i.is_unconditional_jump())
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB)
 
         self.assertIsNot(i, None)
         self.assertEqual(i.body, 'callq  0x2eab0')
@@ -100,15 +96,15 @@ class ParseLineTestCase(unittest.TestCase):
         self.assertEqual(i.target.base, '__sigsetjmp@plt')
         self.assertEqual(i.target.offset, 0)
 
+        self.assertTrue(i.is_call())
+        self.assertFalse(i.is_jump())
+        self.assertFalse(i.is_unconditional_jump())
+
     def test_call_stripped(self):
         line = '''\
  0x000055555556f9b0 <+96>:	call   *0x2731a(%rip)        # 0x555555596cd0
 '''
-        i = asm2cfg.parse_line(line, 1, 'main')
-
-        self.assertTrue(i.is_call())
-        self.assertFalse(i.is_jump())
-        self.assertFalse(i.is_unconditional_jump())
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB)
 
         self.assertIsNot(i, None)
         self.assertEqual(i.body, 'call   *0x2731a(%rip)')
@@ -121,6 +117,30 @@ class ParseLineTestCase(unittest.TestCase):
         self.assertEqual(i.target.abs, 0x555555596cd0)
         self.assertIs(i.target.base, None)
         self.assertIs(i.target.offset, None)
+
+        self.assertTrue(i.is_call())
+        self.assertFalse(i.is_jump())
+        self.assertFalse(i.is_unconditional_jump())
+
+    def test_objdump(self):
+        line = '''\
+16bbb:	74 29                	je     16be6 <_obstack_allocated_p@@Base+0x36>
+'''
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.OBJDUMP)
+
+        self.assertTrue(i.is_jump())
+        self.assertFalse(i.is_unconditional_jump())
+
+        self.assertIsNot(i, None)
+        self.assertEqual(i.body, 'je     16be6')
+        self.assertEqual(i.lineno, 1)
+        self.assertIsNot(i.address, None)
+        self.assertEqual(i.address.abs, 0x16bbb)
+        self.assertIs(i.address.base, 'main')
+        self.assertIsNot(i.target, None)
+        self.assertIs(i.target.abs, None)
+        self.assertEqual(i.target.base, '_obstack_allocated_p@@Base')
+        self.assertIs(i.target.offset, 0x36)
 
 
 class ParseLinesTestCase(unittest.TestCase):
