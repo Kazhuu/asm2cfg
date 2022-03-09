@@ -120,7 +120,7 @@ class ParseLineTestCase(unittest.TestCase):
         self.assertIsNot(i.target, None)
         self.assertEqual(i.target.abs, 0x555555596cd0)
         self.assertIs(i.target.base, None)
-        self.assertEqual(i.target.offset, 0)
+        self.assertIs(i.target.offset, None)
 
 
 class ParseLinesTestCase(unittest.TestCase):
