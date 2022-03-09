@@ -115,14 +115,15 @@ def parse_function_header(line):
     """
     function_name_pattern = re.compile(r'function (\w+):$')
     function_name = function_name_pattern.search(line)
-    if function_name is None:
-        memory_range_pattern = re.compile(fr'from ({HEX_LONG_PATTERN}) to ({HEX_LONG_PATTERN}):$')
-        memory_range = memory_range_pattern.search(line)
-        if memory_range is None:
-            print('First line of the file does not contain a function name or valid memory range')
-            sys.exit(1)
+    if function_name is not None:
+        return function_name[1]
+
+    memory_range_pattern = re.compile(fr'from ({HEX_LONG_PATTERN}) to ({HEX_LONG_PATTERN}):$')
+    memory_range = memory_range_pattern.search(line)
+    if memory_range is not None:
         return f'{memory_range[1]}-{memory_range[2]}'
-    return function_name[1]
+
+    return None
 
 
 class Address:
@@ -252,7 +253,7 @@ def parse_imm(line):
     return target, imm_match[3]
 
 
-def parse_line(line, lineno):
+def parse_line(line, lineno, function_name):
     """
     Parses a single line of assembly to create Instruction instance
     """
@@ -274,6 +275,13 @@ def parse_line(line, lineno):
     if line:
         # Expecting complete parse
         return None
+
+    # Set base symbol for relative addresses
+    if address.base is None:
+        address.base = function_name
+    if target is not None and target.base is None:
+        target.base = function_name
+
     return Instruction(body, original_line, lineno, address, opcode, ops, target, imm)
 
 
@@ -319,20 +327,23 @@ class JumpTable:
 
 
 def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-many-branches,too-many-statements,unused-argument
-    function_name = parse_function_header(lines[0])
-    del lines[0]
-
-    # Parse function body
     instructions = []
+    current_function_name = None
     for num, line in enumerate(lines, 1):
-        instruction = parse_line(line, num)
+        function_name = parse_function_header(line)
+        if function_name is not None:
+            assert current_function_name is None, 'we handle only one function for now'
+            current_function_name = function_name
+            continue
+
+        instruction = parse_line(line, num, current_function_name)
         if instruction is not None:
             instructions.append(instruction)
             continue
-        if line.startswith('End of assembler dump'):
+
+        if line.startswith('End of assembler dump') or not line:
             continue
-        if not line:
-            continue
+
         print(f'Unexpected assembly at line {num}:\n  {line}')
         sys.exit(1)
 
@@ -343,12 +354,6 @@ def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-
             if instruction.target is None:
                 instruction.target = Address(0)
             instruction.target.abs = int(instruction.ops[0], 16)
-
-    # Set base symbol for relative addresses
-    # FIXME: do this during parsing
-    for instruction in instructions:
-        if instruction.address is not None and instruction.address.base is None:
-            instruction.address.base = function_name
 
     # Infer relative addresses (for objdump or stripped gdb)
     start_address = instructions[0].address.abs
@@ -425,7 +430,7 @@ def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-
         previous_jump_block.add_no_jump_edge(end_block.key)
         basic_blocks[end_block.key] = end_block
 
-    return function_name, basic_blocks
+    return current_function_name, basic_blocks
 
 
 def draw_cfg(function_name, basic_blocks, view):
