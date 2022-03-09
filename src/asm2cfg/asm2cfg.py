@@ -398,38 +398,26 @@ def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-
 
         if current_basic_block is None:
             current_basic_block = BasicBlock(program_point.abs)
-            current_basic_block.add_instruction(instruction)
+            basic_blocks[current_basic_block.key] = current_basic_block
             # Previous basic block ended in jump instruction. Add the basic
             # block what follows if the jump was not taken.
             if previous_jump_block is not None:
                 previous_jump_block.add_no_jump_edge(current_basic_block)
                 previous_jump_block = None
-            # If this block only contains jump/call instruction then we
-            # need immediately create a new basic block.
-            if jump_point is not None:
-                current_basic_block.add_jump_edge(jump_point.abs)
-                basic_blocks[current_basic_block.key] = current_basic_block
-                previous_jump_block = None if is_unconditional else current_basic_block
-                current_basic_block = None
         elif jump_table.is_destination(program_point):
             temp_block = current_basic_block
-            basic_blocks[current_basic_block.key] = current_basic_block
             current_basic_block = BasicBlock(program_point.abs)
-            current_basic_block.add_instruction(instruction)
-            temp_block.add_no_jump_edge(current_basic_block)
-        elif jump_point is not None:
-            current_basic_block.add_instruction(instruction)
-            current_basic_block.add_jump_edge(jump_point.abs)
             basic_blocks[current_basic_block.key] = current_basic_block
+            temp_block.add_no_jump_edge(current_basic_block)
+
+        current_basic_block.add_instruction(instruction)
+
+        if jump_point is not None:
+            current_basic_block.add_jump_edge(jump_point.abs)
             previous_jump_block = None if is_unconditional else current_basic_block
             current_basic_block = None
-        else:
-            current_basic_block.add_instruction(instruction)
 
-    if current_basic_block is not None:
-        # Add the last basic block from end of the function.
-        basic_blocks[current_basic_block.key] = current_basic_block
-    elif previous_jump_block is not None:
+    if previous_jump_block is not None:
         # If last instruction of the function is jump/call, then add dummy
         # block to designate end of the function.
         end_block = BasicBlock('end_of_function')
