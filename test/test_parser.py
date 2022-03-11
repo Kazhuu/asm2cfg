@@ -250,6 +250,27 @@ Dump of assembler code for function bar:
         # TODO: special block for indirect jumps
         self.assertEqual(len(blocks), 4)
 
+    def test_dummy_block(self):
+        lines = '''\
+Dump of assembler code for function main:
+   0x000055555556fffb <+1709>:	push   %rbx
+   0x000055555556fffd <+1707>:	je    0x000055555556fffb <main+0>
+'''.split('\n')
+        _, blocks = asm2cfg.parse_lines(lines, False)
+
+        self.assertEqual(len(blocks), 2)
+
+        source_block = _get_the_source_block(blocks)
+        self.assertIsNot(source_block.jump_edge, None)
+        self.assertIsNot(source_block.no_jump_edge, None)
+        self.assertEqual(len(source_block.instructions), 2)
+
+        fall_block = blocks[source_block.no_jump_edge]
+        self.assertIs(fall_block.jump_edge, None)
+        self.assertIs(fall_block.no_jump_edge, None)
+        self.assertEqual(len(fall_block.instructions), 1)
+        self.assertEqual(fall_block.instructions[0].text, 'end of function')
+
     # TODO:
     # - functions (with and w/o calls)
     # - skip calls

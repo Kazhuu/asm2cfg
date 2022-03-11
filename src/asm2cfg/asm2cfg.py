@@ -426,7 +426,8 @@ def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-
         # If last instruction of the function is jump/call, then add dummy
         # block to designate end of the function.
         end_block = BasicBlock('end_of_function')
-        end_block.add_instruction('end of function')
+        dummy_instruction = Instruction('', 'end of function', 0, None, None, [], None, None)
+        end_block.add_instruction(dummy_instruction)
         previous_jump_block.add_no_jump_edge(end_block.key)
         basic_blocks[end_block.key] = end_block
 
