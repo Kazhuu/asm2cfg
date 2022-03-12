@@ -30,7 +30,7 @@ contribute, check [Development](#development) how to get started.
   * [Knowing Function Name](#knowing-function-name)
   * [Disassemble Function](#disassemble-function)
   * [Draw CFG](#draw-cfg)
-* [Examples](#examples)
+  * [Examples](#examples)
 * [Development](#development)
   * [Python Environment](#python-environment)
   * [Testing](#testing)
@@ -184,7 +184,7 @@ To view CFG instead of saving provide `-v` flag. And to skip function calls from
 splitting the code to further blocks provide `-c` flag. To show the help use
 `-h`.
 
-## Examples
+### Examples
 
 Repository includes examples which can be used to test the standalone
 functionality.
@@ -281,6 +281,14 @@ can execute module directly. For example to print help
 
 ```
 python -m src.asm2cfg -h
+```
+
+Standalone method can be used to try out the examples under `examples` folder as
+well. For example following command should generate `main.pdf` file to current
+working directory.
+
+```
+python -m src.asm2cfg -c examples/huge.asm
 ```
 
 ### GDB Integration
