@@ -14,24 +14,21 @@ class FunctionHeaderTestCase(unittest.TestCase):
 
     def test_gdb_unstripped(self):
         line = 'Dump of assembler code for function test_function:'
-        strip, fun = asm2cfg.get_stripped_and_function_name(line)
+        fun = asm2cfg.parse_function_header(line)
 
-        self.assertFalse(strip)
         self.assertEqual(fun, 'test_function')
 
     def test_gdb_stripped(self):
         line = 'Dump of assembler code from 0x555555555faf to 0x555555557008:'
-        strip, fun = asm2cfg.get_stripped_and_function_name(line)
+        fun = asm2cfg.parse_function_header(line)
 
-        self.assertTrue(strip)
         self.assertEqual(fun, '0x555555555faf-0x555555557008')
 
     @unittest.expectedFailure
     def test_objdump(self):
         line = '000000000000100b <bar>:'
-        strip, fun = asm2cfg.get_stripped_and_function_name(line)
+        fun = asm2cfg.parse_function_header(line)
 
-        self.assertFalse(strip)
         self.assertEqual(fun, 'bar')
 
 
@@ -165,7 +162,7 @@ class ParseImmTestCase(unittest.TestCase):
         self.assertIsNot(address, None)
         self.assertEqual(address.abs, 0x5555555967a8)
         self.assertIs(address.base, None)
-        self.assertIs(address.offset, 0)
+        self.assertIs(address.offset, None)
         self.assertEqual(rest, '')
 
     def test_symbolic(self):

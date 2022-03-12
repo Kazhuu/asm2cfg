@@ -104,11 +104,9 @@ HEX_PATTERN = r'[0-9a-fA-F]+'
 HEX_LONG_PATTERN = r'(?:0x0*)?' + HEX_PATTERN
 
 
-def get_stripped_and_function_name(line):
+def parse_function_header(line):
     """
-    Return function name of memory range from the given string line. Return
-    tuple where first element contains information is the binary stripped or
-    not and second element is the function name.
+    Return function name of memory range from the given string line.
 
     Match lines for non-stripped binary:
     'Dump of assembler code for function test_function:'
@@ -116,22 +114,23 @@ def get_stripped_and_function_name(line):
     'Dump of assembler code from 0x555555555faf to 0x555555557008:'
     """
     function_name_pattern = re.compile(r'function (\w+):$')
-    memory_range_pattern = re.compile(fr'from ({HEX_LONG_PATTERN}) to ({HEX_LONG_PATTERN}):$')
     function_name = function_name_pattern.search(line)
+    if function_name is not None:
+        return function_name[1]
+
+    memory_range_pattern = re.compile(fr'from ({HEX_LONG_PATTERN}) to ({HEX_LONG_PATTERN}):$')
     memory_range = memory_range_pattern.search(line)
-    if function_name is None and memory_range is None:
-        print('First line of the file does not contain a function name or valid memory range')
-        sys.exit(1)
-    if function_name is None:
-        return True, f'{memory_range[1]}-{memory_range[2]}'
-    return False, function_name[1]
+    if memory_range is not None:
+        return f'{memory_range[1]}-{memory_range[2]}'
+
+    return None
 
 
 class Address:
     """
     Represents location in program which may be absolute or relative
     """
-    def __init__(self, abs_addr, base=None, offset=0):
+    def __init__(self, abs_addr, base=None, offset=None):
         self.abs = abs_addr
         self.base = base
         self.offset = offset
@@ -254,7 +253,7 @@ def parse_imm(line):
     return target, imm_match[3]
 
 
-def parse_line(line, lineno):
+def parse_line(line, lineno, function_name):
     """
     Parses a single line of assembly to create Instruction instance
     """
@@ -276,36 +275,95 @@ def parse_line(line, lineno):
     if line:
         # Expecting complete parse
         return None
+
+    # Set base symbol for relative addresses
+    if address.base is None:
+        address.base = function_name
+    if target is not None and target.base is None:
+        target.base = function_name
+
     return Instruction(body, original_line, lineno, address, opcode, ops, target, imm)
 
 
-def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-many-branches,too-many-statements,unused-argument
-    stripped, function_name = get_stripped_and_function_name(lines[0])
-    del lines[0]
+class JumpTable:
+    """
+    Holds info about branch sources and destinations in asm function.
+    """
 
-    # Parse function body
+    def __init__(self, instructions):
+        # Address where the jump begins and value which address
+        # to jump to. This also includes calls.
+        self.abs_sources = {}
+        self.rel_sources = {}
+
+        # Addresses where jumps end inside the current function.
+        self.abs_destinations = set()
+        self.rel_destinations = set()
+
+        # Iterate over the lines and collect jump targets and branching points.
+        for inst in instructions:
+            if inst is None or not inst.is_jump():
+                continue
+
+            self.abs_sources[inst.address.abs] = inst.target
+            self.abs_destinations.add(inst.target.abs)
+
+            self.rel_sources[inst.address.offset] = inst.target
+            self.rel_destinations.add(inst.target.offset)
+
+    def is_destination(self, address):
+        if address.abs is not None:
+            return address.abs in self.abs_destinations
+        if address.offset is not None:
+            return address.offset in self.rel_destinations
+        return False
+
+    def get_target(self, address):
+        if address.abs is not None:
+            return self.abs_sources.get(address.abs)
+        if address.offset is not None:
+            return self.rel_sources.get(address.offset)
+        return None
+
+
+def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-many-branches,too-many-statements,unused-argument
     instructions = []
+    current_function_name = None
     for num, line in enumerate(lines, 1):
-        instruction = parse_line(line, num)
+        function_name = parse_function_header(line)
+        if function_name is not None:
+            assert current_function_name is None, 'we handle only one function for now'
+            current_function_name = function_name
+            continue
+
+        instruction = parse_line(line, num, current_function_name)
         if instruction is not None:
             instructions.append(instruction)
             continue
-        if line.startswith('End of assembler dump'):
+
+        if line.startswith('End of assembler dump') or not line:
             continue
-        if not line:
-            continue
+
         print(f'Unexpected assembly at line {num}:\n  {line}')
         sys.exit(1)
 
+    # Infer target address for jump instructions
     for instruction in instructions:
-        if not stripped:
-            # Set base symbol for relative addresses
-            instruction.address.base = function_name
-        if stripped and instruction.is_jump():
-            # Infer target address for jump instructions
+        if (instruction.target is None or instruction.target.abs is None) \
+                and instruction.is_jump():
             if instruction.target is None:
                 instruction.target = Address(0)
             instruction.target.abs = int(instruction.ops[0], 16)
+
+    # Infer relative addresses (for objdump or stripped gdb)
+    start_address = instructions[0].address.abs
+    end_address = instructions[-1].address.abs
+    for instruction in instructions:
+        for address in (instruction.address, instruction.target):
+            if address is not None \
+                    and address.offset is None \
+                    and start_address <= address.abs <= end_address:
+                address.offset = address.abs - start_address
 
     if VERBOSE:
         print('Instructions:')
@@ -313,27 +371,20 @@ def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-
             if instruction is not None:
                 print(f'  {instruction}')
 
-    # Dict key contains address where the jump begins and value which address
-    # to jump to. This also includes calls.
-    jump_table = {}
-    # Set containing addresses where jumps end inside the current function.
-    jump_destinations = set()
-
-    # Iterate over the lines and collect jump targets and branching points.
-    for instruction in instructions:
-        if instruction is None or not instruction.is_jump():
-            continue
-        branch_point = instruction.address.abs if stripped else instruction.address.offset
-        jump_point = instruction.target.abs if stripped else instruction.target.offset
-        jump_table[branch_point] = jump_point, instruction.is_unconditional_jump()
-        jump_destinations.add(jump_point)
+    jump_table = JumpTable(instructions)
 
     if VERBOSE:
-        print('Branch destinations:')
-        for dst in jump_destinations:
+        print('Absolute destinations:')
+        for dst in jump_table.abs_destinations:
+            print(f'  {dst:#x}')
+        print('Relative destinations:')
+        for dst in jump_table.rel_destinations:
             print(f'  {dst}')
-        print('Branches:')
-        for src, dst in jump_table.items():
+        print('Absolute branches:')
+        for src, dst in jump_table.abs_sources.items():
+            print(f'  {src} -> {dst}')
+        print('Relative branches:')
+        for src, dst in jump_table.rel_sources.items():
             print(f'  {src} -> {dst}')
 
     # Now iterate over the assembly again and split it to basic blocks using
@@ -346,52 +397,41 @@ def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-
             continue
 
         # Current offset/address inside the function.
-        program_point = instruction.address.abs if stripped else instruction.address.offset
+        program_point = instruction.address
+        jump_point = jump_table.get_target(program_point)
+        is_unconditional = instruction.is_unconditional_jump()
 
         if current_basic_block is None:
-            current_basic_block = BasicBlock(program_point)
-            current_basic_block.add_instruction(instruction)
+            current_basic_block = BasicBlock(program_point.abs)
+            basic_blocks[current_basic_block.key] = current_basic_block
             # Previous basic block ended in jump instruction. Add the basic
             # block what follows if the jump was not taken.
             if previous_jump_block is not None:
                 previous_jump_block.add_no_jump_edge(current_basic_block)
                 previous_jump_block = None
-            # If this block only contains jump/call instruction then we
-            # need immediately create a new basic block.
-            if program_point in jump_table:
-                jump_point, is_unconditional = jump_table[program_point]
-                current_basic_block.add_jump_edge(jump_point)
-                basic_blocks[current_basic_block.key] = current_basic_block
-                previous_jump_block = None if is_unconditional else current_basic_block
-                current_basic_block = None
-        elif program_point in jump_destinations:
+        elif jump_table.is_destination(program_point):
             temp_block = current_basic_block
+            current_basic_block = BasicBlock(program_point.abs)
             basic_blocks[current_basic_block.key] = current_basic_block
-            current_basic_block = BasicBlock(program_point)
-            current_basic_block.add_instruction(instruction)
             temp_block.add_no_jump_edge(current_basic_block)
-        elif program_point in jump_table:
-            jump_point, is_unconditional = jump_table[program_point]
-            current_basic_block.add_instruction(instruction)
-            current_basic_block.add_jump_edge(jump_point)
-            basic_blocks[current_basic_block.key] = current_basic_block
+
+        current_basic_block.add_instruction(instruction)
+
+        if jump_point is not None:
+            current_basic_block.add_jump_edge(jump_point.abs)
             previous_jump_block = None if is_unconditional else current_basic_block
             current_basic_block = None
-        else:
-            current_basic_block.add_instruction(instruction)
 
-    if current_basic_block is not None:
-        # Add the last basic block from end of the function.
-        basic_blocks[current_basic_block.key] = current_basic_block
-    elif previous_jump_block is not None:
+    if previous_jump_block is not None:
         # If last instruction of the function is jump/call, then add dummy
         # block to designate end of the function.
         end_block = BasicBlock('end_of_function')
-        end_block.add_instruction('end of function')
+        dummy_instruction = Instruction('', 'end of function', 0, None, None, [], None, None)
+        end_block.add_instruction(dummy_instruction)
         previous_jump_block.add_no_jump_edge(end_block.key)
         basic_blocks[end_block.key] = end_block
 
-    return function_name, basic_blocks
+    return current_function_name, basic_blocks
 
 
 def draw_cfg(function_name, basic_blocks, view):

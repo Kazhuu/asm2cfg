@@ -19,7 +19,7 @@ class ParseLineTestCase(unittest.TestCase):
 
     def test_simple_inst(self):
         line = '0x000055555556f957 <+7>:	push   %r14'
-        i = asm2cfg.parse_line(line, 1)
+        i = asm2cfg.parse_line(line, 1, 'main')
 
         self.assertFalse(i.is_call())
         self.assertFalse(i.is_jump())
@@ -30,7 +30,7 @@ class ParseLineTestCase(unittest.TestCase):
         self.assertEqual(i.lineno, 1)
         self.assertIsNot(i.address, None)
         self.assertEqual(i.address.abs, 0x000055555556f957)
-        self.assertIs(i.address.base, None)
+        self.assertIs(i.address.base, 'main')
         self.assertEqual(i.address.offset, 7)
         self.assertIs(i.target, None)
 
@@ -38,7 +38,7 @@ class ParseLineTestCase(unittest.TestCase):
         line = '''\
 0x00007ffff7fbf26b <+395>:	jmp    0x7ffff7fbf55d <test_function+1149>\
 '''
-        i = asm2cfg.parse_line(line, 1)
+        i = asm2cfg.parse_line(line, 1, 'main')
         self.assertIsNot(i, None)
 
         self.assertFalse(i.is_call())
@@ -49,7 +49,7 @@ class ParseLineTestCase(unittest.TestCase):
         self.assertEqual(i.lineno, 1)
         self.assertIsNot(i.address, None)
         self.assertEqual(i.address.abs, 0x00007ffff7fbf26b)
-        self.assertIs(i.address.base, None)
+        self.assertIs(i.address.base, 'main')
         self.assertEqual(i.address.offset, 395)
         self.assertIsNot(i.target, None)
         self.assertIs(i.target.abs, None)  # FIXME
@@ -60,7 +60,7 @@ class ParseLineTestCase(unittest.TestCase):
         line = '''\
 0x00007ffff7fbf565 <+1157>:	je     0x7ffff7fbf635 <test_function+1365>\
 '''
-        i = asm2cfg.parse_line(line, 1)
+        i = asm2cfg.parse_line(line, 1, 'main')
 
         self.assertFalse(i.is_call())
         self.assertTrue(i.is_jump())
@@ -71,7 +71,7 @@ class ParseLineTestCase(unittest.TestCase):
         self.assertEqual(i.lineno, 1)
         self.assertIsNot(i.address, None)
         self.assertEqual(i.address.abs, 0x00007ffff7fbf565)
-        self.assertIs(i.address.base, None)
+        self.assertIs(i.address.base, 'main')
         self.assertEqual(i.address.offset, 1157)
         self.assertIsNot(i.target, None)
         self.assertIs(i.target.abs, None)  # FIXME
@@ -82,7 +82,7 @@ class ParseLineTestCase(unittest.TestCase):
         line = '''\
 0x000000000002ec0f <+63>:	callq  0x2eab0 <__sigsetjmp@plt>
 '''
-        i = asm2cfg.parse_line(line, 1)
+        i = asm2cfg.parse_line(line, 1, 'main')
 
         self.assertTrue(i.is_call())
         self.assertFalse(i.is_jump())
@@ -93,7 +93,7 @@ class ParseLineTestCase(unittest.TestCase):
         self.assertEqual(i.lineno, 1)
         self.assertIsNot(i.address, None)
         self.assertEqual(i.address.abs, 0x000000000002ec0f)
-        self.assertIs(i.address.base, None)
+        self.assertIs(i.address.base, 'main')
         self.assertEqual(i.address.offset, 63)
         self.assertIsNot(i.target, None)
         self.assertIs(i.target.abs, None)  # FIXME
@@ -104,7 +104,7 @@ class ParseLineTestCase(unittest.TestCase):
         line = '''\
  0x000055555556f9b0 <+96>:	call   *0x2731a(%rip)        # 0x555555596cd0
 '''
-        i = asm2cfg.parse_line(line, 1)
+        i = asm2cfg.parse_line(line, 1, 'main')
 
         self.assertTrue(i.is_call())
         self.assertFalse(i.is_jump())
@@ -115,12 +115,12 @@ class ParseLineTestCase(unittest.TestCase):
         self.assertEqual(i.lineno, 1)
         self.assertIsNot(i.address, None)
         self.assertEqual(i.address.abs, 0x000055555556f9b0)
-        self.assertIs(i.address.base, None)
+        self.assertIs(i.address.base, 'main')
         self.assertEqual(i.address.offset, 96)
         self.assertIsNot(i.target, None)
         self.assertEqual(i.target.abs, 0x555555596cd0)
         self.assertIs(i.target.base, None)
-        self.assertEqual(i.target.offset, 0)
+        self.assertIs(i.target.offset, None)
 
 
 class ParseLinesTestCase(unittest.TestCase):
@@ -249,6 +249,27 @@ Dump of assembler code for function bar:
 
         # TODO: special block for indirect jumps
         self.assertEqual(len(blocks), 4)
+
+    def test_dummy_block(self):
+        lines = '''\
+Dump of assembler code for function main:
+   0x000055555556fffb <+1709>:	push   %rbx
+   0x000055555556fffd <+1707>:	je    0x000055555556fffb <main+0>
+'''.split('\n')
+        _, blocks = asm2cfg.parse_lines(lines, False)
+
+        self.assertEqual(len(blocks), 2)
+
+        source_block = _get_the_source_block(blocks)
+        self.assertIsNot(source_block.jump_edge, None)
+        self.assertIsNot(source_block.no_jump_edge, None)
+        self.assertEqual(len(source_block.instructions), 2)
+
+        fall_block = blocks[source_block.no_jump_edge]
+        self.assertIs(fall_block.jump_edge, None)
+        self.assertIs(fall_block.no_jump_edge, None)
+        self.assertEqual(len(fall_block.instructions), 1)
+        self.assertEqual(fall_block.instructions[0].text, 'end of function')
 
     # TODO:
     # - functions (with and w/o calls)
