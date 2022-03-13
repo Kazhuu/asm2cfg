@@ -252,7 +252,7 @@ def parse_encoding(line):
     # Encoding is separated from assembly mnemonic via tab
     # so we allow whitespace separators between bytes
     # to avoid accidentally matching the mnemonic.
-    enc_match = re.match(r'^\s*((?:[0-9a-f][0-9a-f](?: +|$))+)(.*)', line)
+    enc_match = re.match(r'^\s*((?:[0-9a-f][0-9a-f] +)+)(.*)', line)
     if enc_match is None:
         return None, line
     bites = [int(byte, 16) for byte in enc_match[1].strip().split(' ')]
@@ -309,10 +309,11 @@ def parse_line(line, lineno, function_name, fmt):
     Parses a single line of assembly to create Instruction instance
     """
 
+    # Strip GDB prefix and leading whites
     if line.startswith('=> '):
         # Strip GDB marker
         line = line[3:]
-    line = line.strip()
+    line = line.lstrip()
 
     address, line = parse_address(line)
     if address is None:
