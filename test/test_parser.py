@@ -216,6 +216,27 @@ Dump of assembler code for function main:
         self.assertIs(dst_block.no_jump_edge, None)
         self.assertEqual(len(dst_block.instructions), 2)
 
+    def test_return(self):
+        lines = '''\
+Dump of assembler code for function main:
+   0x000055555556fffb <+1707>:	retq
+   0x0000555555570058 <+1800>:	mov    0xe0(%rsp),%rdi
+   0x0000555555570060 <+1808>:	test   %rdi,%rdi
+'''.split('\n')
+        _, blocks = asm2cfg.parse_lines(lines, False)
+
+        self.assertEqual(len(blocks), 2)
+
+        ret_block, other_block = blocks.values()
+
+        self.assertIs(ret_block.jump_edge, None)
+        self.assertIs(ret_block.no_jump_edge, None)
+        self.assertEqual(len(ret_block.instructions), 1)
+
+        self.assertIs(other_block.jump_edge, None)
+        self.assertIs(other_block.no_jump_edge, None)
+        self.assertEqual(len(other_block.instructions), 2)
+
     @unittest.expectedFailure
     def test_jumptables(self):
         lines = '''\

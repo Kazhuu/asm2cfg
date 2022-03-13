@@ -221,6 +221,9 @@ class Instruction:
     def is_jump(self):
         return self.opcode[0] == 'j'
 
+    def is_sink(self):
+        return self.opcode.startswith('ret')
+
     # TODO: handle sink instructions like retq
     def is_unconditional_jump(self):
         return self.opcode.startswith('jmp')
@@ -487,6 +490,8 @@ def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-
             current_basic_block.add_jump_edge(jump_point.abs)
             previous_jump_block = None if is_unconditional else current_basic_block
             current_basic_block = None
+        elif instruction.is_sink():
+            previous_jump_block = current_basic_block = None
 
     if previous_jump_block is not None:
         # If last instruction of the function is jump/call, then add dummy
