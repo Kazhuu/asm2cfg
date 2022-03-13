@@ -9,6 +9,7 @@ import tempfile
 from graphviz import Digraph
 
 
+# TODO: make this a command-line flag
 VERBOSE = 0
 
 
@@ -104,26 +105,42 @@ HEX_PATTERN = r'[0-9a-fA-F]+'
 HEX_LONG_PATTERN = r'(?:0x0*)?' + HEX_PATTERN
 
 
+class InputFormat:  # pylint: disable=too-few-public-methods
+    """
+    An enum which represents various supported input formats
+    """
+    GDB = 'GDB'
+    OBJDUMP = 'OBJDUMP'
+
+
 def parse_function_header(line):
     """
     Return function name of memory range from the given string line.
 
-    Match lines for non-stripped binary:
+    Match lines for non-stripped binaries:
     'Dump of assembler code for function test_function:'
-    and lines for stripped binary:
+    lines for stripped binaries:
     'Dump of assembler code from 0x555555555faf to 0x555555557008:'
+    and lines for obdjdump disassembly:
+    '0000000000016bb0 <_obstack_allocated_p@@Base>:'
     """
+
+    objdump_name_pattern = re.compile(fr'{HEX_PATTERN} <([a-zA-Z_0-9@.]+)>:')
+    function_name = objdump_name_pattern.search(line)
+    if function_name is not None:
+        return InputFormat.OBJDUMP, function_name[1]
+
     function_name_pattern = re.compile(r'function (\w+):$')
     function_name = function_name_pattern.search(line)
     if function_name is not None:
-        return function_name[1]
+        return InputFormat.GDB, function_name[1]
 
     memory_range_pattern = re.compile(fr'from ({HEX_LONG_PATTERN}) to ({HEX_LONG_PATTERN}):$')
     memory_range = memory_range_pattern.search(line)
     if memory_range is not None:
-        return f'{memory_range[1]}-{memory_range[2]}'
+        return InputFormat.GDB, f'{memory_range[1]}-{memory_range[2]}'
 
-    return None
+    return None, None
 
 
 class Address:
@@ -158,6 +175,22 @@ class Address:
             self.offset = other.offset
 
 
+class Encoding:
+    """
+    Represents a sequence of bytes used for instruction encoding
+    e.g. the '31 c0' in
+    '16bd3:	31 c0                	xor    %eax,%eax'
+    """
+    def __init__(self, bites):
+        self.bites = bites
+
+    def size(self):
+        return len(self.bites)
+
+    def __str__(self):
+        return ' '.join(map(lambda b: f'{b:#x}', self.bites))
+
+
 class Instruction:
     """
     Represents a single assembly instruction with it operands, location and
@@ -182,11 +215,16 @@ class Instruction:
         #   call   *0x26a16(%rip)
         #   call   0x555555555542
         #   addr32 call 0x55555558add0
+        # TODO: here and elsewhere support other target platforms
         return 'call' in self.opcode
 
     def is_jump(self):
         return self.opcode[0] == 'j'
 
+    def is_sink(self):
+        return self.opcode.startswith('ret')
+
+    # TODO: handle sink instructions like retq
     def is_unconditional_jump(self):
         return self.opcode.startswith('jmp')
 
@@ -206,6 +244,22 @@ def parse_address(line):
         return None, line
     address = Address(int(address_match[1], 16), None, int(address_match[2]) if address_match[2] else None)
     return address, address_match[3]
+
+
+def parse_encoding(line):
+    """
+    Parses byte encoding of instruction for objdump disassemblies
+    e.g. the '31 c0' in
+    '16bd3:	31 c0                	xor    %eax,%eax'
+    """
+    # Encoding is separated from assembly mnemonic via tab
+    # so we allow whitespace separators between bytes
+    # to avoid accidentally matching the mnemonic.
+    enc_match = re.match(r'^\s*((?:[0-9a-f][0-9a-f] +)+)(.*)', line)
+    if enc_match is None:
+        return None, line
+    bites = [int(byte, 16) for byte in enc_match[1].strip().split(' ')]
+    return Encoding(bites), enc_match[2]
 
 
 def parse_body(line):
@@ -229,11 +283,11 @@ def parse_target(line):
     """
     Parses optional instruction branch target hint
     """
-    target_match = re.match(r'\s*<([a-zA-Z_@0-9]+)([+-][0-9]+)?>(.*)', line)
+    target_match = re.match(r'\s*<([a-zA-Z_@0-9]+)([+-]0x[0-9a-f]+|[+-][0-9]+)?>(.*)', line)
     if target_match is None:
         return None, line
     offset = target_match[2] or '+0'
-    address = Address(None, target_match[1], int(offset))
+    address = Address(None, target_match[1], int(offset, 0))
     return address, target_match[3]
 
 
@@ -253,24 +307,33 @@ def parse_imm(line):
     return target, imm_match[3]
 
 
-def parse_line(line, lineno, function_name):
+def parse_line(line, lineno, function_name, fmt):
     """
     Parses a single line of assembly to create Instruction instance
     """
 
+    # Strip GDB prefix and leading whites
     if line.startswith('=> '):
         # Strip GDB marker
         line = line[3:]
-    line = line.strip()
+    line = line.lstrip()
 
     address, line = parse_address(line)
     if address is None:
         return None
+
+    if fmt == InputFormat.OBJDUMP:
+        encoding, line = parse_encoding(line)
+        if not line:
+            return encoding
+
     original_line = line
     body, opcode, ops, line = parse_body(line)
     if opcode is None:
         return None
+
     target, line = parse_target(line)
+
     imm, line = parse_imm(line)
     if line:
         # Expecting complete parse
@@ -328,17 +391,23 @@ class JumpTable:
 
 def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-many-branches,too-many-statements,unused-argument
     instructions = []
-    current_function_name = None
+    current_function_name = current_format = None
     for num, line in enumerate(lines, 1):
-        function_name = parse_function_header(line)
+        fmt, function_name = parse_function_header(line)
         if function_name is not None:
             assert current_function_name is None, 'we handle only one function for now'
+            if VERBOSE:
+                print(f'New function {function_name} (format {fmt})')
             current_function_name = function_name
+            current_format = fmt
             continue
 
-        instruction = parse_line(line, num, current_function_name)
-        if instruction is not None:
-            instructions.append(instruction)
+        instruction_or_encoding = parse_line(line, num, current_function_name, current_format)
+        if isinstance(instruction_or_encoding, Encoding):
+            # Partial encoding for previous instruction, skip it
+            continue
+        if instruction_or_encoding is not None:
+            instructions.append(instruction_or_encoding)
             continue
 
         if line.startswith('End of assembler dump') or not line:
@@ -382,7 +451,7 @@ def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-
             print(f'  {dst}')
         print('Absolute branches:')
         for src, dst in jump_table.abs_sources.items():
-            print(f'  {src} -> {dst}')
+            print(f'  {src:#x} -> {dst}')
         print('Relative branches:')
         for src, dst in jump_table.rel_sources.items():
             print(f'  {src} -> {dst}')
@@ -421,6 +490,8 @@ def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-
             current_basic_block.add_jump_edge(jump_point.abs)
             previous_jump_block = None if is_unconditional else current_basic_block
             current_basic_block = None
+        elif instruction.is_sink():
+            previous_jump_block = current_basic_block = None
 
     if previous_jump_block is not None:
         # If last instruction of the function is jump/call, then add dummy
