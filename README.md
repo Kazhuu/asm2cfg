@@ -5,20 +5,20 @@
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/Kazhuu/asm2cfg.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Kazhuu/asm2cfg/alerts/)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Kazhuu/asm2cfg.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Kazhuu/asm2cfg/context:python)
 
-GDB Python extension to view and save GDB disassembled function control-flow
-graphs (CFG) with simple commands straight from GDB session. To view CFG use
-`viewcfg` command and to save it to a file use `savecfg` command.
+Python command-line tool and GDB extension to view and save x86, ARM and objdump
+assembly files as control-flow graph (CFG) pdf files. From GDB debugging session
+use `viewcfg` command to view CFG and use `savecfg` command to save it to the
+pdf file.
 
 <p align="center">
   <img src="https://github.com/Kazhuu/asm2cfg/blob/main/images/example.png?raw=true" />
 </p>
 
-Program doesn't care about the assembly language. Python will just read the jump
-addresses and instructions to determine the control flow from that. Support for
-both stripped and non-stripped assembly dumps. Tested with x86 assembly. So not
-sure does this work with other assembly languages. If you have any suggestions
-or find bugs, please open an issue or create a pull request. If you want to
-contribute, check [Development](#development) how to get started.
+Program has been developed to support X86, ARM and objdump assembly outputs.
+Program is mostly tested with x86 assembly. ARM and objdump formats might not be
+fully supported. If you have any suggestions or find bugs, please open an issue
+or create a pull request. If you want to contribute, check
+[Development](#development) how to get started.
 
 ## Table of Content
 
@@ -49,8 +49,8 @@ Project can be installed with pip
 pip install asm2cfg
 ```
 
-To be able to view the dot files. External dot viewer is required. For this
-purpose [xdot](https://pypi.org/project/xdot/) can be used for example. Any
+To be able to view the dot files from GDB. External dot viewer is required. For
+this purpose [xdot](https://pypi.org/project/xdot/) can be used for example. Any
 other dot viewer will also do. To install this on Debian based distro run
 
 ```
@@ -112,8 +112,9 @@ time. To have normal behavior again run `set skipcalls off`.
 
 ## Usage as Standalone
 
-Pip will install `asm2cfg` command-line tool that can be used as a standalone
-program with the same functionality as from GDB but with external files.
+This method can be used with assembly files saved from ouput of objdump and GDB
+disassembly. Pip installation will come with `asm2cfg` command-line tool for
+this purpose.
 
 To use as standalone script you first need to dump assembly from GDB or objdump
 to the file which is explained below.
@@ -172,20 +173,23 @@ You can also extract function's disassembly from `objdump` output:
 objdump -d ./test_executable | sed -ne '/<test_function/,/^$/p' > test_executable.asm
 ```
 
-(this may be useful for specific non-native targets which lack gdb support).
+(this may be useful for specific non-native targets which lack GDB support).
 
 ### Draw CFG
 
-Now you have the assembly file. Time to turn that to CFG. Do that by giving it
-to `asm2cfg` like so
+Now you have the assembly file. Time to turn that to CFG pdf file. Do that by giving it
+to `asm2cfg` command-line tool like so
 
 ```
 asm2cfg test_function.asm
 ```
 
-This will output `test_function.pdf` file in the same directory where the
-executable was ran. If the assembly file is stripped then the function memory
-range is used as a name instead. For example
+Asm2cfg by default expects x86 assembly files. If you want to use ARM assembly files,
+then provide `--target arm` command-line flag.
+
+Above command should output `test_function.pdf` file in the same directory where
+the executable was ran. If the assembly file is stripped then the function
+memory range is used as a name instead. For example
 `0x555555555faf-0x555555557008.pdf`.
 
 To view CFG instead of saving provide `-v` flag. And to skip function calls from
@@ -195,7 +199,7 @@ splitting the code to further blocks provide `-c` flag. To show the help use
 ### Examples
 
 Repository includes examples which can be used to test the standalone
-functionality.
+functionality for x86, ARM and objdump.
 
 File `test_function.asm` is non-stripped assembly file and its
 corresponding output `test_function.pdf`.
@@ -212,6 +216,9 @@ test processing time of big functions.
 
 Files `objdump.asm` and `stripped_objdump.asm` are the regular and stripped
 objdump-based disassemblies of short functions.
+
+File `arm.asm` is ARM based assembly file and its corresponding pdf file is
+`arm.pdf`.
 
 ## Development
 
@@ -338,12 +345,11 @@ commands `viewcfg` and `savecfg`.
 
 ### Current Development Goals
 
-There are known problems that asm2cfg will not fully support all x86 assembly
+There are might be cases asm2cfg will not fully support all x86 or ARM assembly
 lines. If you encounter such problems please open an issue.
 
-Also current goal is to improve test coverage and then focus on refactoring the
-project to make it easier to add additional assembly support and cover all x86
-cases. Also objdump support is planned.
+Current developed goals are best described in issues section. Please open a new
+one if existing one does not exist.
 
 If you want to talk to me, you can contact me at Discord with name
 `Kazhuu#3121`.
