@@ -17,9 +17,13 @@ class ParseLineTestCase(unittest.TestCase):
     Tests of parse_line function
     """
 
+    def setUp(self):
+        self.target_info = asm2cfg.X86TargetInfo()
+        self.arm_target_info = asm2cfg.ARMTargetInfo()
+
     def test_simple_inst(self):
         line = '0x000055555556f957 <+7>:	push   %r14'
-        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB)
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB, self.target_info)
 
         self.assertIsNot(i, None)
         self.assertEqual(i.body, 'push   %r14')
@@ -38,7 +42,7 @@ class ParseLineTestCase(unittest.TestCase):
         line = '''\
 0x00007ffff7fbf26b <+395>:	jmp    0x7ffff7fbf55d <test_function+1149>\
 '''
-        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB)
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB, self.target_info)
         self.assertIsNot(i, None)
 
         self.assertEqual(i.body, 'jmp    0x7ffff7fbf55d')
@@ -60,7 +64,7 @@ class ParseLineTestCase(unittest.TestCase):
         line = '''\
 0x00007ffff7fbf565 <+1157>:	je     0x7ffff7fbf635 <test_function+1365>\
 '''
-        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB)
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB, self.target_info)
 
         self.assertIsNot(i, None)
         self.assertEqual(i.body, 'je     0x7ffff7fbf635')
@@ -82,7 +86,7 @@ class ParseLineTestCase(unittest.TestCase):
         line = '''\
 0x000000000002ec0f <+63>:	callq  0x2eab0 <__sigsetjmp@plt>
 '''
-        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB)
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB, self.target_info)
 
         self.assertIsNot(i, None)
         self.assertEqual(i.body, 'callq  0x2eab0')
@@ -104,7 +108,7 @@ class ParseLineTestCase(unittest.TestCase):
         line = '''\
  0x000055555556f9b0 <+96>:	call   *0x2731a(%rip)        # 0x555555596cd0
 '''
-        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB)
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.GDB, self.target_info)
 
         self.assertIsNot(i, None)
         self.assertEqual(i.body, 'call   *0x2731a(%rip)')
@@ -126,10 +130,7 @@ class ParseLineTestCase(unittest.TestCase):
         line = '''\
 16bbb:	74 29                	je     16be6 <_obstack_allocated_p@@Base+0x36>
 '''
-        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.OBJDUMP)
-
-        self.assertTrue(i.is_jump())
-        self.assertFalse(i.is_unconditional_jump())
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.OBJDUMP, self.target_info)
 
         self.assertIsNot(i, None)
         self.assertEqual(i.body, 'je     16be6')
@@ -141,6 +142,49 @@ class ParseLineTestCase(unittest.TestCase):
         self.assertIs(i.target.abs, None)
         self.assertEqual(i.target.base, '_obstack_allocated_p@@Base')
         self.assertIs(i.target.offset, 0x36)
+
+        self.assertTrue(i.is_jump())
+        self.assertFalse(i.is_unconditional_jump())
+
+    def test_arm_branch(self):
+        line = '''\
+  1c:	0a000001 	beq	28 <check_one_fd+0x28>
+'''
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.OBJDUMP, self.arm_target_info)
+
+        self.assertIsNot(i, None)
+        self.assertEqual(i.body, 'beq	28')
+        self.assertEqual(i.lineno, 1)
+        self.assertIsNot(i.address, None)
+        self.assertEqual(i.address.abs, 0x1c)
+        self.assertIs(i.address.base, 'main')
+        self.assertIsNot(i.target, None)
+        self.assertIs(i.target.abs, None)
+        self.assertEqual(i.target.base, 'check_one_fd')
+        self.assertIs(i.target.offset, 0x28)
+
+        self.assertTrue(i.is_jump())
+        self.assertFalse(i.is_unconditional_jump())
+
+    def test_arm_jump(self):
+        line = '''\
+  1c:	0a000001 	b	28 <check_one_fd+0x28>
+'''
+        i = asm2cfg.parse_line(line, 1, 'main', asm2cfg.InputFormat.OBJDUMP, self.arm_target_info)
+
+        self.assertIsNot(i, None)
+        self.assertEqual(i.body, 'b	28')
+        self.assertEqual(i.lineno, 1)
+        self.assertIsNot(i.address, None)
+        self.assertEqual(i.address.abs, 0x1c)
+        self.assertIs(i.address.base, 'main')
+        self.assertIsNot(i.target, None)
+        self.assertIs(i.target.abs, None)
+        self.assertEqual(i.target.base, 'check_one_fd')
+        self.assertIs(i.target.offset, 0x28)
+
+        self.assertTrue(i.is_jump())
+        self.assertTrue(i.is_unconditional_jump())
 
 
 class ParseLinesTestCase(unittest.TestCase):
@@ -158,7 +202,7 @@ Dump of assembler code for function main:
    0x000055555556f95d <+13>:	push   %rbp
    0x000055555556f95e <+14>:	push   %rbx\
 '''.split('\n')
-        _, blocks = asm2cfg.parse_lines(lines, False)
+        _, blocks = asm2cfg.parse_lines(lines, False, 'x86')
 
         self.assertEqual(len(blocks), 1)
         _, block = blocks.popitem()
@@ -173,7 +217,7 @@ Dump of assembler code for function main:
    0x0000555555570058 <+1800>:	mov    0xe0(%rsp),%rdi
    0x0000555555570060 <+1808>:	test   %rdi,%rdi
 '''.split('\n')
-        _, blocks = asm2cfg.parse_lines(lines, False)
+        _, blocks = asm2cfg.parse_lines(lines, False, 'x86')
 
         self.assertEqual(len(blocks), 2)
 
@@ -197,7 +241,7 @@ Dump of assembler code for function main:
    0x0000555555570058 <+1800>:	mov    0xe0(%rsp),%rdi
    0x0000555555570060 <+1808>:	test   %rdi,%rdi
 '''.split('\n')
-        _, blocks = asm2cfg.parse_lines(lines, False)
+        _, blocks = asm2cfg.parse_lines(lines, False, 'x86')
 
         self.assertEqual(len(blocks), 3)
 
@@ -223,7 +267,7 @@ Dump of assembler code for function main:
    0x0000555555570058 <+1800>:	mov    0xe0(%rsp),%rdi
    0x0000555555570060 <+1808>:	test   %rdi,%rdi
 '''.split('\n')
-        _, blocks = asm2cfg.parse_lines(lines, False)
+        _, blocks = asm2cfg.parse_lines(lines, False, 'x86')
 
         self.assertEqual(len(blocks), 2)
 
@@ -286,7 +330,7 @@ Dump of assembler code for function bar:
    0x000000000000111a <+170>:	nopw   0x0(%rax,%rax,1)
    0x0000000000001120 <+176>:	retq
 '''.split('\n')
-        _, blocks = asm2cfg.parse_lines(lines, False)
+        _, blocks = asm2cfg.parse_lines(lines, False, 'x86')
 
         # TODO: special block for indirect jumps
         self.assertEqual(len(blocks), 4)
@@ -297,7 +341,7 @@ Dump of assembler code for function main:
    0x000055555556fffb <+1709>:	push   %rbx
    0x000055555556fffd <+1707>:	je    0x000055555556fffb <main+0>
 '''.split('\n')
-        _, blocks = asm2cfg.parse_lines(lines, False)
+        _, blocks = asm2cfg.parse_lines(lines, False, 'x86')
 
         self.assertEqual(len(blocks), 2)
 

@@ -65,9 +65,12 @@ class ParseBodyTestCase(unittest.TestCase):
     Tests of asm2cfg.parse_body function
     """
 
+    def setUp(self):
+        self.target_info = asm2cfg.X86TargetInfo()
+
     def test_gdb_stripped_known(self):
         line = '	call 0x55555558add0 <_Z19exportDebugifyStats>'
-        body, opcode, ops, rest = asm2cfg.parse_body(line)
+        body, opcode, ops, rest = asm2cfg.parse_body(line, self.target_info)
 
         self.assertIsNot(body, None)
         self.assertEqual(body, 'call 0x55555558add0')
@@ -77,7 +80,7 @@ class ParseBodyTestCase(unittest.TestCase):
 
     def test_gdb_stripped_pic(self):
         line = '    call   *0x26a16(%rip)        # 0x5555555967a8'
-        body, opcode, ops, rest = asm2cfg.parse_body(line)
+        body, opcode, ops, rest = asm2cfg.parse_body(line, self.target_info)
 
         self.assertIsNot(body, None)
         self.assertEqual(body, 'call   *0x26a16(%rip)')
@@ -87,7 +90,7 @@ class ParseBodyTestCase(unittest.TestCase):
 
     def test_gdb_plt(self):
         line = '	callq  0x1020 <foo@plt>'
-        body, opcode, ops, rest = asm2cfg.parse_body(line)
+        body, opcode, ops, rest = asm2cfg.parse_body(line, self.target_info)
 
         self.assertIsNot(body, None)
         self.assertEqual(body, 'callq  0x1020')
@@ -97,7 +100,7 @@ class ParseBodyTestCase(unittest.TestCase):
 
     def test_gdb_stripped_nonpic(self):
         line = '	call   0x555555555542'
-        body, opcode, ops, rest = asm2cfg.parse_body(line)
+        body, opcode, ops, rest = asm2cfg.parse_body(line, self.target_info)
 
         self.assertIsNot(body, None)
         self.assertEqual(body, 'call   0x555555555542')
@@ -107,7 +110,7 @@ class ParseBodyTestCase(unittest.TestCase):
 
     def test_gdb_indirect_call(self):
         line = '	callq  *(%rsi)'
-        body, opcode, ops, rest = asm2cfg.parse_body(line)
+        body, opcode, ops, rest = asm2cfg.parse_body(line, self.target_info)
 
         self.assertIsNot(body, None)
         self.assertEqual(body, 'callq  *(%rsi)')
@@ -152,14 +155,17 @@ class ParseTargetTestCase(unittest.TestCase):
         self.assertEqual(rest, '')
 
 
-class ParseImmTestCase(unittest.TestCase):
+class ParseCommentTestCase(unittest.TestCase):
     """
-    Tests of parse_imm function
+    Tests of parse_comment function
     """
+
+    def setUp(self):
+        self.target_info = asm2cfg.X86TargetInfo()
 
     def test_absolute(self):
         line = '# 0x5555555967a8'
-        address, rest = asm2cfg.parse_imm(line)
+        address, rest = asm2cfg.parse_comment(line, self.target_info)
 
         self.assertIsNot(address, None)
         self.assertEqual(address.abs, 0x5555555967a8)
@@ -169,7 +175,7 @@ class ParseImmTestCase(unittest.TestCase):
 
     def test_symbolic(self):
         line = '# 0x5555555967a8 <foo>'
-        address, rest = asm2cfg.parse_imm(line)
+        address, rest = asm2cfg.parse_comment(line, self.target_info)
 
         self.assertIsNot(address, None)
         self.assertEqual(address.abs, 0x5555555967a8)
@@ -179,7 +185,7 @@ class ParseImmTestCase(unittest.TestCase):
 
     def test_complete(self):
         line = '# 3ff8 <foo+0x2ff8>'
-        address, rest = asm2cfg.parse_imm(line)
+        address, rest = asm2cfg.parse_comment(line, self.target_info)
 
         self.assertIsNot(address, None)
         self.assertEqual(address.abs, 0x3ff8)  # FIXME: support hex offsets

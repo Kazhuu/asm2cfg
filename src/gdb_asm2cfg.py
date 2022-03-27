@@ -55,8 +55,17 @@ class ViewCfg(gdb.Command):  # pylint: disable=too-few-public-methods
     def invoke(self, _arg, _from_tty):  # pylint: disable=no-self-use
         """ Called by GDB when viewcfg command is invoked """
         try:
+            frame = gdb.selected_frame()
+            arch = frame.architecture().name()
+            if arch.startswith('i386'):
+                target_name = 'x86'
+            elif arch.startswith('arm'):
+                target_name = 'arm'
+            else:
+                raise RuntimeError(f'unknown platform: {arch}')
             assembly_lines = gdb.execute('disassemble', from_tty=False, to_string=True).split('\n')
-            function_name, basic_blocks = asm2cfg.parse_lines(assembly_lines, gdb.parameter('skipcalls'))
+            function_name, basic_blocks = asm2cfg.parse_lines(assembly_lines, gdb.parameter('skipcalls'),
+                                                              target_name)
             asm2cfg.draw_cfg(function_name, basic_blocks, view=True)
         # Catch error coming from GDB side before other errors.
         except gdb.error as ex:
@@ -80,7 +89,8 @@ class SaveCfg(gdb.Command):  # pylint: disable=too-few-public-methods
         """ Called by GDB when savecfg command is invoked """
         try:
             assembly_lines = gdb.execute('disassemble', from_tty=False, to_string=True).split('\n')
-            function_name, basic_blocks = asm2cfg.parse_lines(assembly_lines, gdb.parameter('skipcalls'))
+            function_name, basic_blocks = asm2cfg.parse_lines(assembly_lines, gdb.parameter('skipcalls'),
+                                                              'x86')
             asm2cfg.draw_cfg(function_name, basic_blocks, view=False)
         # Catch error coming from GDB side before other errors.
         except gdb.error as ex:

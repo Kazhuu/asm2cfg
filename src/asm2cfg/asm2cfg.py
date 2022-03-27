@@ -23,6 +23,7 @@ def escape(instruction):
     instruction = instruction.replace('|', r'\|')
     instruction = instruction.replace('{', r'\{')
     instruction = instruction.replace('}', r'\}')
+    instruction = instruction.replace('	', ' ')
     return instruction
 
 
@@ -135,7 +136,7 @@ def parse_function_header(line):
     if function_name is not None:
         return InputFormat.GDB, function_name[1]
 
-    memory_range_pattern = re.compile(fr'from ({HEX_LONG_PATTERN}) to ({HEX_LONG_PATTERN}):$')
+    memory_range_pattern = re.compile(fr'(?:Address range|from) ({HEX_LONG_PATTERN}) to ({HEX_LONG_PATTERN}):$')
     memory_range = memory_range_pattern.search(line)
     if memory_range is not None:
         return InputFormat.GDB, f'{memory_range[1]}-{memory_range[2]}'
@@ -191,12 +192,81 @@ class Encoding:
         return ' '.join(map(lambda b: f'{b:#x}', self.bites))
 
 
+class X86TargetInfo:
+    """
+    Contains instruction info for X86-compatible targets.
+    """
+
+    def __init__(self):
+        pass
+
+    def comment(self):
+        return '#'
+
+    def is_call(self, instruction):
+        # Various flavors of call:
+        #   call   *0x26a16(%rip)
+        #   call   0x555555555542
+        #   addr32 call 0x55555558add0
+        return 'call' in instruction.opcode
+
+    def is_jump(self, instruction):
+        return instruction.opcode[0] == 'j'
+
+    def is_unconditional_jump(self, instruction):
+        return instruction.opcode.startswith('jmp')
+
+    def is_sink(self, instruction):
+        """
+        Is this an instruction which terminates function execution e.g. return?
+        """
+        return instruction.opcode.startswith('ret')
+
+
+class ARMTargetInfo:
+    """
+    Contains instruction info for ARM-compatible targets.
+    """
+
+    def __init__(self):
+        pass
+
+    def comment(self):
+        return ';'
+
+    def is_call(self, instruction):
+        # Various flavors of call:
+        #   bl 0x19d90 <_IO_vtable_check>
+        # Note that we should be careful to not mix it with conditional
+        # branches like 'ble'.
+        return instruction.opcode.startswith('bl') \
+            and instruction.opcode not in ('blt', 'ble', 'bls')
+
+    def is_jump(self, instruction):
+        return instruction.opcode[0] == 'b' and not self.is_call(instruction)
+
+    def is_unconditional_jump(self, instruction):
+        return instruction.opcode == 'b'
+
+    def is_sink(self, instruction):
+        """
+        Is this an instruction which terminates function execution e.g. return?
+        Detect various flavors of return like
+          bx lr
+          pop {r2-r6,pc}
+        Note that we do not consider conditional branches (e.g. 'bxle') to sink.
+        """
+        return re.search(r'\bpop\b.*\bpc\b', instruction.body) \
+            or (instruction.opcode == 'bx' and instruction.ops[0] == 'lr') \
+            or instruction.opcode == 'udf'
+
+
 class Instruction:
     """
     Represents a single assembly instruction with it operands, location and
     optional branch target
     """
-    def __init__(self, body, text, lineno, address, opcode, ops, target, imm):  # pylint: disable=too-many-arguments
+    def __init__(self, body, text, lineno, address, opcode, ops, target, imm, target_info):  # noqa
         self.body = body
         self.text = text
         self.lineno = lineno
@@ -204,6 +274,7 @@ class Instruction:
         self.opcode = opcode
         self.ops = ops
         self.target = target
+        self.info = target_info
         if imm is not None and (self.is_jump() or self.is_call()):
             if self.target is None:
                 self.target = imm
@@ -211,22 +282,19 @@ class Instruction:
                 self.target.merge(imm)
 
     def is_call(self):
-        # Various flavors of call:
-        #   call   *0x26a16(%rip)
-        #   call   0x555555555542
-        #   addr32 call 0x55555558add0
-        # TODO: here and elsewhere support other target platforms
-        return 'call' in self.opcode
+        return self.info.is_call(self)
 
     def is_jump(self):
-        return self.opcode[0] == 'j'
+        return self.info.is_jump(self)
+
+    def is_direct_jump(self):
+        return self.is_jump() and re.match(fr'{HEX_LONG_PATTERN}', self.ops[0])
 
     def is_sink(self):
-        return self.opcode.startswith('ret')
+        return self.info.is_sink(self)
 
-    # TODO: handle sink instructions like retq
     def is_unconditional_jump(self):
-        return self.opcode.startswith('jmp')
+        return self.info.is_unconditional_jump(self)
 
     def __str__(self):
         result = f'{self.address}: {self.opcode}'
@@ -246,27 +314,41 @@ def parse_address(line):
     return address, address_match[3]
 
 
+def split_nth(string, count):
+    """
+    Splits string to equally-sized chunks
+    """
+    return [string[i:i+count] for i in range(0, len(string), count)]
+
+
 def parse_encoding(line):
     """
     Parses byte encoding of instruction for objdump disassemblies
     e.g. the '31 c0' in
     '16bd3:	31 c0                	xor    %eax,%eax'
+    In addition to X86 supports ARM encoding styles:
+    '4:	e1a01000 	mov	r1, r0'
+    '50:	f7ff fffe 	bl	0 <__aeabi_dadd>'
+    '54:	0002      	movs	r2, r0'
     """
     # Encoding is separated from assembly mnemonic via tab
     # so we allow whitespace separators between bytes
     # to avoid accidentally matching the mnemonic.
-    enc_match = re.match(r'^\s*((?:[0-9a-f][0-9a-f] +)+)(.*)', line)
+    enc_match = re.match(r'^\s*((?:[0-9a-f]{2,8} +)+)(.*)', line)
     if enc_match is None:
         return None, line
-    bites = [int(byte, 16) for byte in enc_match[1].strip().split(' ')]
+    bites = []
+    for chunk in enc_match[1].strip().split(' '):
+        bites.extend(int(byte, 16) for byte in split_nth(chunk, 2))
     return Encoding(bites), enc_match[2]
 
 
-def parse_body(line):
+def parse_body(line, target_info):
     """
     Parses instruction body (opcode and operands)
     """
-    body_match = re.match(r'^\s*([^#<]+)(.*)', line)
+    comment_symbol = target_info.comment()
+    body_match = re.match(fr'^\s*([^{comment_symbol}<]+)(.*)', line)
     if body_match is None:
         return None, None, None, line
     body = body_match[1].strip()
@@ -291,13 +373,21 @@ def parse_target(line):
     return address, target_match[3]
 
 
-def parse_imm(line):
+def parse_comment(line, target_info):
     """
-    Parses optional instruction imm hint
+    Parses optional instruction comment
     """
-    imm_match = re.match(fr'^\s*#\s*(?:0x)?({HEX_PATTERN})\s*(<.*>)?(.*)', line)
-    if imm_match is None:
+    comment_symbol = target_info.comment()
+    comment_match = re.match(fr'^\s*{comment_symbol}\s*(.*)', line)
+    if comment_match is None:
         return None, line
+    comment = comment_match[1]
+    imm_match = re.match(fr'^(?:0x)?({HEX_PATTERN})\s*(<.*>)?(.*)', comment)
+    if imm_match is None:
+        # If no imm was found, ignore the comment.
+        # In particular this takes care of useless ARM comments like
+        # '82:	46c0      	nop			; (mov r8, r8)'
+        return None, ''
     abs_addr = int(imm_match[1], 16)
     if imm_match[2]:
         target, _ = parse_target(imm_match[2])
@@ -307,7 +397,7 @@ def parse_imm(line):
     return target, imm_match[3]
 
 
-def parse_line(line, lineno, function_name, fmt):
+def parse_line(line, lineno, function_name, fmt, target_info):
     """
     Parses a single line of assembly to create Instruction instance
     """
@@ -328,13 +418,13 @@ def parse_line(line, lineno, function_name, fmt):
             return encoding
 
     original_line = line
-    body, opcode, ops, line = parse_body(line)
+    body, opcode, ops, line = parse_body(line, target_info)
     if opcode is None:
         return None
 
     target, line = parse_target(line)
 
-    imm, line = parse_imm(line)
+    imm, line = parse_comment(line, target_info)
     if line:
         # Expecting complete parse
         return None
@@ -345,7 +435,7 @@ def parse_line(line, lineno, function_name, fmt):
     if target is not None and target.base is None:
         target.base = function_name
 
-    return Instruction(body, original_line, lineno, address, opcode, ops, target, imm)
+    return Instruction(body, original_line, lineno, address, opcode, ops, target, imm, target_info)
 
 
 class JumpTable:
@@ -365,7 +455,7 @@ class JumpTable:
 
         # Iterate over the lines and collect jump targets and branching points.
         for inst in instructions:
-            if inst is None or not inst.is_jump():
+            if inst is None or not inst.is_direct_jump():
                 continue
 
             self.abs_sources[inst.address.abs] = inst.target
@@ -389,7 +479,15 @@ class JumpTable:
         return None
 
 
-def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-many-branches,too-many-statements,unused-argument
+def parse_lines(lines, skip_calls, target_name):  # noqa pylint: disable=unused-argument
+    if target_name == 'x86':
+        target_info = X86TargetInfo()
+    elif target_name == 'arm':
+        target_info = ARMTargetInfo()
+    else:
+        print(f'Unsupported platform {target_name}')
+        sys.exit(1)
+
     instructions = []
     current_function_name = current_format = None
     for num, line in enumerate(lines, 1):
@@ -402,7 +500,7 @@ def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-
             current_format = fmt
             continue
 
-        instruction_or_encoding = parse_line(line, num, current_function_name, current_format)
+        instruction_or_encoding = parse_line(line, num, current_function_name, current_format, target_info)
         if isinstance(instruction_or_encoding, Encoding):
             # Partial encoding for previous instruction, skip it
             continue
@@ -413,13 +511,16 @@ def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-
         if line.startswith('End of assembler dump') or not line:
             continue
 
+        if line.strip() == '':
+            continue
+
         print(f'Unexpected assembly at line {num}:\n  {line}')
         sys.exit(1)
 
     # Infer target address for jump instructions
     for instruction in instructions:
         if (instruction.target is None or instruction.target.abs is None) \
-                and instruction.is_jump():
+                and instruction.is_direct_jump():
             if instruction.target is None:
                 instruction.target = Address(0)
             instruction.target.abs = int(instruction.ops[0], 16)
@@ -497,7 +598,7 @@ def parse_lines(lines, skip_calls):  # noqa pylint: disable=too-many-locals,too-
         # If last instruction of the function is jump/call, then add dummy
         # block to designate end of the function.
         end_block = BasicBlock('end_of_function')
-        dummy_instruction = Instruction('', 'end of function', 0, None, None, [], None, None)
+        dummy_instruction = Instruction('', 'end of function', 0, None, None, [], None, None, target_info)
         end_block.add_instruction(dummy_instruction)
         previous_jump_block.add_no_jump_edge(end_block.key)
         basic_blocks[end_block.key] = end_block
