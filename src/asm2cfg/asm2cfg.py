@@ -435,7 +435,7 @@ def parse_line(line, lineno, function_name, fmt, target_info):
     if target is not None and target.base is None:
         target.base = function_name
 
-    return Instruction(body, original_line, lineno, address, opcode, ops, target, imm, target_info)
+    return Instruction(body, original_line.strip(), lineno, address, opcode, ops, target, imm, target_info)
 
 
 class JumpTable:
