@@ -206,12 +206,12 @@ corresponding output `test_function.pdf`.
 
 File `stripped_function.asm` contains
 stripped function and its corresponding output
-`0x555555555faf-0x555555557008.pdf`.
+`stripped_function.pdf`.
 
 File `att_syntax.asm` is an example of non-stripped AT&T assembly.
 
 File `huge.asm` is a large stripped
-assembly function and its corresponding output `main.pdf`. This can be used to
+assembly function and its corresponding output `huge.pdf`. This can be used to
 test processing time of big functions.
 
 Files `objdump.asm` and `stripped_objdump.asm` are the regular and stripped
