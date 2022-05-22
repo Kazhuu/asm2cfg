@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-18.04, ubuntu-20.04, ubuntu-latest]
-        py: [python3.7, python3]  # 3.5 lacks f-strings
+        py: [python3.6, python3.7, python3]  # 3.5 lacks f-strings
     runs-on: ${{ matrix.os }}
     env:
       PYTHON: ${{ matrix.py }}
@@ -25,6 +25,17 @@ jobs:
       run: |
         sudo add-apt-repository ppa:deadsnakes/ppa
         scripts/install-deps.sh
+    - name: Install pipenv Ubuntu 18.04
+      # Why specific version of pipenv, check this https://github.com/pypa/pipenv/issues/4829
+      if: matrix.os == 'ubuntu-18.04'
+      run: |
+        ${{ matrix.py }} -m pip install pipenv==2021.5.29
+        pipenv install --dev
+    - name: Install pipenv others
+      if: matrix.os != 'ubuntu-18.04'
+      run: |
+        ${{ matrix.py }} -m pip install pipenv
+        pipenv install --dev
     - name: Run tests
       run: pipenv run pytest test/
   Lint:
