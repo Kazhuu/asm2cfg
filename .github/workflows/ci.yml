@@ -1,5 +1,6 @@
 name: CI
 on:
+  workflow_dispatch:
   push:
     paths-ignore:
     - 'LICENSE'
@@ -24,6 +25,17 @@ jobs:
       run: |
         sudo add-apt-repository ppa:deadsnakes/ppa
         scripts/install-deps.sh
+    - name: Install pipenv Ubuntu 18.04
+      # Why specific version of pipenv, check this https://github.com/pypa/pipenv/issues/4829
+      if: matrix.os == 'ubuntu-18.04'
+      run: |
+        ${{ matrix.py }} -m pip install pipenv==2021.5.29
+        pipenv install --dev
+    - name: Install pipenv others
+      if: matrix.os != 'ubuntu-18.04'
+      run: |
+        ${{ matrix.py }} -m pip install pipenv
+        pipenv install --dev
     - name: Run tests
       run: pipenv run pytest test/
   Lint:
@@ -32,6 +44,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install deps
       run: |
+        python3 -m pip install pipenv
+        pipenv install --dev
         scripts/install-deps.sh
     - name: flake8
       run: pipenv run flake8
@@ -46,6 +60,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install deps
       run: |
+        python3 -m pip install pipenv
+        pipenv install --dev
         scripts/install-deps.sh
         # Install packages to system python because that will be used by GDB.
         # This is needed so we get correct coverage report when testing GDB
