@@ -45,6 +45,7 @@ jobs:
     - name: Install deps
       run: |
         python3 -m pip install pipenv
+        pipenv install --dev
         scripts/install-deps.sh
     - name: flake8
       run: pipenv run flake8
@@ -60,6 +61,7 @@ jobs:
     - name: Install deps
       run: |
         python3 -m pip install pipenv
+        pipenv install --dev
         scripts/install-deps.sh
         # Install packages to system python because that will be used by GDB.
         # This is needed so we get correct coverage report when testing GDB
