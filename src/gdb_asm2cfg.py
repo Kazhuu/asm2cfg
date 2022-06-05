@@ -52,7 +52,7 @@ class ViewCfg(gdb.Command):  # pylint: disable=too-few-public-methods
     def __init__(self):
         super().__init__('viewcfg', gdb.COMMAND_USER)
 
-    def invoke(self, _arg, _from_tty):  # pylint: disable=no-self-use
+    def invoke(self, _arg, _from_tty):  # pylint: disable=bad-option-value,no-self-use
         """ Called by GDB when viewcfg command is invoked """
         try:
             frame = gdb.selected_frame()
