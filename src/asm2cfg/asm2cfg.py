@@ -22,6 +22,7 @@ class InputFormat(Enum):
     """
     An enum which represents various supported input formats
     """
+
     GDB = 'GDB'
     OBJDUMP = 'OBJDUMP'
     CSV = 'CSV'
@@ -489,15 +490,25 @@ def parse_line_csv(line: str, lineno, target_info):
     Parse a single line of assembly to create an Instruction instance.
     """
     original_line = line
-    elements: list[str] = line.split(";")
+    elements: list[str] = line.split(';')
     addr: Address = Address(int(elements[0]))
     operands: str = elements[3]
     target: Address | None = None
-    match = re.match(r"^[\d]+$", operands)
+    match = re.match(r'^[\d]+$', operands)
     if match:
         target = Address(int(operands))
     txt = original_line.strip()
-    return Instruction(body=None, text=txt, lineno=lineno, address=addr, opcode=elements[2], ops=operands, target=target, imm=None, target_info=target_info)
+    return Instruction(
+        body=None,
+        text=txt,
+        lineno=lineno,
+        address=addr,
+        opcode=elements[2],
+        ops=operands,
+        target=target,
+        imm=None,
+        target_info=target_info,
+    )
 
 
 def parse_line(line, lineno, function_name, fmt, target_info):
@@ -558,7 +569,7 @@ def parse_lines(lines, skip_calls, target_name):  # noqa pylint: disable=unused-
     for num, line in enumerate(lines, 1):
         fmt, function_name = parse_function_header(line)
         if fmt == InputFormat.CSV:
-            function_name = "CSV"
+            function_name = 'CSV'
         if function_name is not None:
             assert current_function_name is None, 'we handle only one function for now'
             if VERBOSE:
