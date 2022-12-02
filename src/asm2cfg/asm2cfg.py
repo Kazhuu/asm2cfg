@@ -1079,6 +1079,6 @@ def draw_cfgdark(function_name,basic_blocks, view):
         print(f'Saved CFG to a file {function_name}.{dot.format}')
         # redundant(f'back{function_name}.{dot.format}', f'new{function_name}.{dot.format}')
         utils.replaceline_0(f'{function_name}.{dot.format}', f'back{function_name}.{dot.format}')
-        # utils.replaceline(f'back{function_name}.{dot.format}', f'back2{function_name}.{dot.format}')        
-        # utils.replaceline2(f'back2{function_name}.{dot.format}', f'new{function_name}.{dot.format}')
+        utils.replaceline(f'back{function_name}.{dot.format}', f'back2{function_name}.{dot.format}')        
+        utils.replaceline2(f'back2{function_name}.{dot.format}', f'new{function_name}.{dot.format}')
         print(f'Saved new CFG to a file back{function_name}.{dot.format}')

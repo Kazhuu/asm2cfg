@@ -52,8 +52,8 @@ def replaceline2(infile, outfile):
             # print(str(line).replace(">debug", " fill='"'red'"'>"))
             
             # if(str(line).find("white") >=0):
-            if(str(line).find("green") <=0):
-                outfopen.writelines(str(line).replace(">0x","fill=\"white\">0x"))
+            if(str(line).find("green") >0):
+                outfopen.writelines(str(line).replace("fill=\"white\"",""))
             else:
                 outfopen.writelines(str(line))
             
