@@ -16,6 +16,9 @@ jobs:
       matrix:
         os: [ubuntu-18.04, ubuntu-20.04, ubuntu-latest]
         py: [python3.6, python3.7, python3]  # 3.5 lacks f-strings
+        exclude: # Python 3.6 not supported on Ubuntu 22.04 Jammy.
+          - os: ubuntu-latest
+          - py: python3.6
     runs-on: ${{ matrix.os }}
     env:
       PYTHON: ${{ matrix.py }}
