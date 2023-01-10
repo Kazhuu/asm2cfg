@@ -2,29 +2,71 @@
 Module containing main building blocks to parse assembly and draw CFGs.
 """
 
+from abc import ABC, abstractmethod
 import re
 import sys
 import tempfile
-
+from enum import Enum
 from graphviz import Digraph
 
 
 # TODO: make this a command-line flag
 VERBOSE = 0
 
+# Common regexes
+HEX_PATTERN = r'[0-9a-fA-F]+'
+HEX_LONG_PATTERN = r'(?:0x0*)?' + HEX_PATTERN
 
-def escape(instruction):
+
+class InputFormat(Enum):
     """
-    Escape used dot graph characters in given instruction so they will be
-    displayed correctly.
+    An enum which represents various supported input formats
     """
-    instruction = instruction.replace('<', r'\<')
-    instruction = instruction.replace('>', r'\>')
-    instruction = instruction.replace('|', r'\|')
-    instruction = instruction.replace('{', r'\{')
-    instruction = instruction.replace('}', r'\}')
-    instruction = instruction.replace('	', ' ')
-    return instruction
+
+    GDB = 'GDB'
+    OBJDUMP = 'OBJDUMP'
+    CSV = 'CSV'
+
+
+class JumpTable:
+    """
+    Holds info about branch sources and destinations in asm function.
+    """
+
+    def __init__(self, instructions):
+        # Address where the jump begins and value which address
+        # to jump to. This also includes calls.
+        self.abs_sources = {}
+        self.rel_sources = {}
+
+        # Addresses where jumps end inside the current function.
+        self.abs_destinations = set()
+        self.rel_destinations = set()
+
+        # Iterate over the lines and collect jump targets and branching points.
+        for inst in instructions:
+            if inst is None or not inst.is_direct_jump():
+                continue
+
+            self.abs_sources[inst.address.abs] = inst.target
+            self.abs_destinations.add(inst.target.abs)
+
+            self.rel_sources[inst.address.offset] = inst.target
+            self.rel_destinations.add(inst.target.offset)
+
+    def is_destination(self, address):
+        if address.abs is not None:
+            return address.abs in self.abs_destinations
+        if address.offset is not None:
+            return address.offset in self.rel_destinations
+        return False
+
+    def get_target(self, address):
+        if address.abs is not None:
+            return self.abs_sources.get(address.abs)
+        if address.offset is not None:
+            return self.rel_sources.get(address.offset)
+        return None
 
 
 class BasicBlock:
@@ -85,69 +127,11 @@ class BasicBlock:
         return '\n'.join([i.text for i in self.instructions])
 
 
-def print_assembly(basic_blocks):
-    """
-    Debug function to print the assembly.
-    """
-    for basic_block in basic_blocks.values():
-        print(basic_block)
-
-
-def read_lines(file_path):
-    """ Read lines from the file and return then as a list. """
-    lines = []
-    with open(file_path, 'r', encoding='utf8') as asm_file:
-        lines = asm_file.readlines()
-    return lines
-
-
-# Common regexes
-HEX_PATTERN = r'[0-9a-fA-F]+'
-HEX_LONG_PATTERN = r'(?:0x0*)?' + HEX_PATTERN
-
-
-class InputFormat:  # pylint: disable=too-few-public-methods
-    """
-    An enum which represents various supported input formats
-    """
-    GDB = 'GDB'
-    OBJDUMP = 'OBJDUMP'
-
-
-def parse_function_header(line):
-    """
-    Return function name of memory range from the given string line.
-
-    Match lines for non-stripped binaries:
-    'Dump of assembler code for function test_function:'
-    lines for stripped binaries:
-    'Dump of assembler code from 0x555555555faf to 0x555555557008:'
-    and lines for obdjdump disassembly:
-    '0000000000016bb0 <_obstack_allocated_p@@Base>:'
-    """
-
-    objdump_name_pattern = re.compile(fr'{HEX_PATTERN} <([a-zA-Z_0-9@.]+)>:')
-    function_name = objdump_name_pattern.search(line)
-    if function_name is not None:
-        return InputFormat.OBJDUMP, function_name[1]
-
-    function_name_pattern = re.compile(r'function (\w+):$')
-    function_name = function_name_pattern.search(line)
-    if function_name is not None:
-        return InputFormat.GDB, function_name[1]
-
-    memory_range_pattern = re.compile(fr'(?:Address range|from) ({HEX_LONG_PATTERN}) to ({HEX_LONG_PATTERN}):$')
-    memory_range = memory_range_pattern.search(line)
-    if memory_range is not None:
-        return InputFormat.GDB, f'{memory_range[1]}-{memory_range[2]}'
-
-    return None, None
-
-
 class Address:
     """
     Represents location in program which may be absolute or relative
     """
+
     def __init__(self, abs_addr, base=None, offset=None):
         self.abs = abs_addr
         self.base = base
@@ -182,6 +166,7 @@ class Encoding:
     e.g. the '31 c0' in
     '16bd3:	31 c0                	xor    %eax,%eax'
     """
+
     def __init__(self, bites):
         self.bites = bites
 
@@ -192,7 +177,46 @@ class Encoding:
         return ' '.join(map(lambda b: f'{b:#x}', self.bites))
 
 
-class X86TargetInfo:
+class TargetInfo(ABC):
+    """
+    Abstract class, contains instruction info for the targets.
+    """
+
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def comment(self):
+        """
+        Returns the comment symbol for the target.
+        """
+
+    @abstractmethod
+    def is_call(self, instruction):
+        """
+        Returns True if the instruction is of type call.
+        """
+
+    @abstractmethod
+    def is_jump(self, instruction):
+        """
+        Returns True if the instruction is of type jump.
+        """
+
+    @abstractmethod
+    def is_unconditional_jump(self, instruction):
+        """
+        Returns True if the instruction is an is_unconditional jump.
+        """
+
+    @abstractmethod
+    def is_sink(self, instruction):
+        """
+        Is this an instruction which terminates function execution e.g. return?
+        """
+
+
+class X86TargetInfo(TargetInfo):
     """
     Contains instruction info for X86-compatible targets.
     """
@@ -223,7 +247,7 @@ class X86TargetInfo:
         return instruction.opcode.startswith('ret')
 
 
-class ARMTargetInfo:
+class ARMTargetInfo(TargetInfo):
     """
     Contains instruction info for ARM-compatible targets.
     """
@@ -266,6 +290,7 @@ class Instruction:
     Represents a single assembly instruction with it operands, location and
     optional branch target
     """
+
     def __init__(self, body, text, lineno, address, opcode, ops, target, imm, target_info):  # noqa
         self.body = body
         self.text = text
@@ -301,6 +326,69 @@ class Instruction:
         if self.ops:
             result += f' {self.ops}'
         return result
+
+
+def escape(instruction):
+    """
+    Escape used dot graph characters in given instruction so they will be
+    displayed correctly.
+    """
+    instruction = instruction.replace('<', r'\<')
+    instruction = instruction.replace('>', r'\>')
+    instruction = instruction.replace('|', r'\|')
+    instruction = instruction.replace('{', r'\{')
+    instruction = instruction.replace('}', r'\}')
+    instruction = instruction.replace('	', ' ')
+    return instruction
+
+
+def print_assembly(basic_blocks):
+    """
+    Debug function to print the assembly.
+    """
+    for basic_block in basic_blocks.values():
+        print(basic_block)
+
+
+def read_lines(file_path):
+    """ Read lines from the file and return then as a list. """
+    lines = []
+    with open(file_path, 'r', encoding='utf8') as asm_file:
+        lines = asm_file.readlines()
+    return lines
+
+
+def parse_function_header(line):
+    """
+    Return function name of memory range from the given string line.
+
+    Match lines for non-stripped binaries:
+    'Dump of assembler code for function test_function:'
+    lines for stripped binaries:
+    'Dump of assembler code from 0x555555555faf to 0x555555557008:'
+    and lines for obdjdump disassembly:
+    '0000000000016bb0 <_obstack_allocated_p@@Base>:'
+    """
+
+    objdump_name_pattern = re.compile(fr'{HEX_PATTERN} <([a-zA-Z_0-9@.]+)>:')
+    function_name = objdump_name_pattern.search(line)
+    if function_name is not None:
+        return InputFormat.OBJDUMP, function_name[1]
+
+    function_name_pattern = re.compile(r'function (\w+):$')
+    function_name = function_name_pattern.search(line)
+    if function_name is not None:
+        return InputFormat.GDB, function_name[1]
+
+    memory_range_pattern = re.compile(fr'(?:Address range|from) ({HEX_LONG_PATTERN}) to ({HEX_LONG_PATTERN}):$')
+    memory_range = memory_range_pattern.search(line)
+    if memory_range is not None:
+        return InputFormat.GDB, f'{memory_range[1]}-{memory_range[2]}'
+
+    if line.strip() == 'address;bytes;operator;operand':
+        return InputFormat.CSV, None
+
+    return None, None
 
 
 def parse_address(line):
@@ -397,10 +485,40 @@ def parse_comment(line, target_info):
     return target, imm_match[3]
 
 
+def parse_line_csv(line: str, lineno, target_info):
+    """
+    Parse a single line of assembly to create an Instruction instance.
+    """
+    original_line = line
+    elements: list[str] = line.split(';')
+    addr: Address = Address(int(elements[0]))
+    operands: str = elements[3]
+    target: Address | None = None
+    match = re.match(r'^[\d]+$', operands)
+    if match:
+        target = Address(int(operands))
+    txt = original_line.strip()
+    return Instruction(
+        body=None,
+        text=txt,
+        lineno=lineno,
+        address=addr,
+        opcode=elements[2],
+        ops=operands,
+        target=target,
+        imm=None,
+        target_info=target_info,
+    )
+
+
 def parse_line(line, lineno, function_name, fmt, target_info):
     """
     Parses a single line of assembly to create Instruction instance
     """
+    original_line = line
+
+    if fmt == InputFormat.CSV:
+        return parse_line_csv(line, lineno, target_info)
 
     # Strip GDB prefix and leading whites
     if line.startswith('=> '):
@@ -417,7 +535,6 @@ def parse_line(line, lineno, function_name, fmt, target_info):
         if not line:
             return encoding
 
-    original_line = line
     body, opcode, ops, line = parse_body(line, target_info)
     if opcode is None:
         return None
@@ -438,47 +555,6 @@ def parse_line(line, lineno, function_name, fmt, target_info):
     return Instruction(body, original_line.strip(), lineno, address, opcode, ops, target, imm, target_info)
 
 
-class JumpTable:
-    """
-    Holds info about branch sources and destinations in asm function.
-    """
-
-    def __init__(self, instructions):
-        # Address where the jump begins and value which address
-        # to jump to. This also includes calls.
-        self.abs_sources = {}
-        self.rel_sources = {}
-
-        # Addresses where jumps end inside the current function.
-        self.abs_destinations = set()
-        self.rel_destinations = set()
-
-        # Iterate over the lines and collect jump targets and branching points.
-        for inst in instructions:
-            if inst is None or not inst.is_direct_jump():
-                continue
-
-            self.abs_sources[inst.address.abs] = inst.target
-            self.abs_destinations.add(inst.target.abs)
-
-            self.rel_sources[inst.address.offset] = inst.target
-            self.rel_destinations.add(inst.target.offset)
-
-    def is_destination(self, address):
-        if address.abs is not None:
-            return address.abs in self.abs_destinations
-        if address.offset is not None:
-            return address.offset in self.rel_destinations
-        return False
-
-    def get_target(self, address):
-        if address.abs is not None:
-            return self.abs_sources.get(address.abs)
-        if address.offset is not None:
-            return self.rel_sources.get(address.offset)
-        return None
-
-
 def parse_lines(lines, skip_calls, target_name):  # noqa pylint: disable=unused-argument
     if target_name == 'x86':
         target_info = X86TargetInfo()
@@ -492,6 +568,8 @@ def parse_lines(lines, skip_calls, target_name):  # noqa pylint: disable=unused-
     current_function_name = current_format = None
     for num, line in enumerate(lines, 1):
         fmt, function_name = parse_function_header(line)
+        if fmt == InputFormat.CSV:
+            function_name = 'CSV'
         if function_name is not None:
             assert current_function_name is None, 'we handle only one function for now'
             if VERBOSE:
@@ -501,6 +579,7 @@ def parse_lines(lines, skip_calls, target_name):  # noqa pylint: disable=unused-
             continue
 
         instruction_or_encoding = parse_line(line, num, current_function_name, current_format, target_info)
+        # print(instruction_or_encoding)
         if isinstance(instruction_or_encoding, Encoding):
             # Partial encoding for previous instruction, skip it
             continue
@@ -508,10 +587,16 @@ def parse_lines(lines, skip_calls, target_name):  # noqa pylint: disable=unused-
             instructions.append(instruction_or_encoding)
             continue
 
+        # Ignore the last line of gdb informing about the end of the dump
         if line.startswith('End of assembler dump') or not line:
             continue
 
+        # Ignore empty lines
         if line.strip() == '':
+            continue
+
+        # Ignore the header of the CSV file
+        if line.strip() == 'address;bytes;operator;operand':
             continue
 
         print(f'Unexpected assembly at line {num}:\n  {line}')

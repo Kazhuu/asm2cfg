@@ -1,0 +1,60 @@
+address;bytes;operator;operand
+4608;55;pushq;%rbp
+4609;53;pushq;%rbx
+4610;50;pushq;%rax
+4611;488b5e08;movq;8(%rsi), %rbx
+4615;4889df;movq;%rbx, %rdi
+4618;e827410000;callq;4176
+4623;85c0;testl;%eax, %eax
+4625;7437;je;4642
+4627;8d48ff;leal;-1(%rax), %ecx
+4630;83f903;cmpl;$3, %ecx
+4633;732e;jae;4649
+4635;31ed;xorl;%ebp, %ebp
+4637;e9fa000000;jmp;4718
+4642;31ed;xorl;%ebp, %ebp
+4644;e9a1010000;jmp;4777
+4649;89c1;movl;%eax, %ecx
+4651;83e1fc;andl;$-4, %ecx
+4654;31ed;xorl;%ebp, %ebp
+4656;0f1f840000000000;imull;$131, %ebp, %edx
+4664;69d531010000;movsbl;(%rbx), %esi
+4670;0fbe33;addl;%edx, %esi
+4673;01d6;imull;$131, %esi, %edx
+4675;69d631010000;movsbl;1(%rbx), %esi
+4681;0fbe7301;addl;%edx, %esi
+4685;01d6;imull;$131, %esi, %edx
+4687;69d631010000;movsbl;2(%rbx), %esi
+4693;0fbe7302;addl;%edx, %esi
+4697;01d6;imull;$131, %esi, %edx
+4699;69d631010000;movsbl;3(%rbx), %ebp
+4705;0fbe6b03;addl;%edx, %ebp
+4709;01d5;addq;$4, %rbx
+4711;4883c304;addl;$-4, %ecx
+4715;83c1fc;jne;4656
+4718;0f854cffffff;testb;$3, %al
+4724;a803;je;4760
+4726;746c;andl;$3, %eax
+4728;83e003;xorl;%ecx, %ecx
+4731;31c9;imull;$131, %ebp, %edx
+4733;66662e0f1f840000000000;movsbl;(%rbx,%rcx), %ebp
+4744;69d531010000;addl;%edx, %ebp
+4750;0fbe2c0b;addq;$1, %rcx
+4754;01d5;cmpl;%ecx, %eax
+4756;4883c101;jne;4731
+4760;39c8;cmpl;$-1114471758, %ebp
+4762;75bc;jne;4777
+4764;81fda8e8b8eb;movl;$-1114471758, %ebp
+4770;7526;leaq;.Lstr.1(%rip), %rdi
+4772;bda8e8b8eb;jmp;4784
+4777;488d3dae000000;leaq;.Lstr(%rip), %rdi
+4784;eb0f;callq;4144
+4786;488d3d82000000;leaq;.L.str.2(%rip), %rdi
+4793;e8d63e0000;movl;%ebp, %esi
+4798;488d3d52000000;xorl;%eax, %eax
+4805;89ee;callq;4128
+4807;31c0;xorl;%eax, %eax
+4809;e88a3e0000;addq;$8, %rsp
+4814;31c0;popq;%rbx
+4816;4883c408;popq;%rbp
+4820;5b;retq;None
