@@ -349,6 +349,6 @@ Dump of assembler code for function test_function:
    0x00007ffff7fbf7cb <+1771>:	pop    %r14
    0x00007ffff7fbf7cd <+1773>:	pop    %r15
    0x00007ffff7fbf7cf <+1775>:	pop    %rbp
-   0x00007ffff7fbf7d0 <+1776>:	vzeroupper 
-   0x00007ffff7fbf7d3 <+1779>:	ret    
+   0x00007ffff7fbf7d0 <+1776>:	vzeroupper
+   0x00007ffff7fbf7d3 <+1779>:	ret
 End of assembler dump.

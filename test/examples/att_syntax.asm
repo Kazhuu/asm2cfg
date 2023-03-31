@@ -1,5 +1,5 @@
 Dump of assembler code for function main:
-   0x000000000002ebd0 <+0>:	endbr64 
+   0x000000000002ebd0 <+0>:	endbr64
    0x000000000002ebd4 <+4>:	push   %r15
    0x000000000002ebd6 <+6>:	push   %r14
    0x000000000002ebd8 <+8>:	push   %r13
@@ -16,7 +16,7 @@ Dump of assembler code for function main:
    0x000000000002ec05 <+53>:	mov    %rax,0x128(%rsp)
    0x000000000002ec0d <+61>:	xor    %eax,%eax
    0x000000000002ec0f <+63>:	callq  0x2eab0 <__sigsetjmp@plt>
-   0x000000000002ec14 <+68>:	endbr64 
+   0x000000000002ec14 <+68>:	endbr64
    0x000000000002ec18 <+72>:	test   %eax,%eax
    0x000000000002ec1a <+74>:	jne    0x2ec7c <main+172>
    0x000000000002ec1c <+76>:	callq  0x42360 <xtrace_init>
@@ -86,7 +86,7 @@ Dump of assembler code for function main:
    0x000000000002ed58 <+392>:	mov    $0x1,%esi
    0x000000000002ed5d <+397>:	lea    0xf735c(%rip),%rdi        # 0x1260c0 <subshell_top_level>
    0x000000000002ed64 <+404>:	callq  0x2eab0 <__sigsetjmp@plt>
-   0x000000000002ed69 <+409>:	endbr64 
+   0x000000000002ed69 <+409>:	endbr64
    0x000000000002ed6d <+413>:	test   %eax,%eax
    0x000000000002ed6f <+415>:	je     0x2ed9d <main+461>
    0x000000000002ed71 <+417>:	movl   $0x0,0xf29bd(%rip)        # 0x121738
@@ -157,7 +157,7 @@ Dump of assembler code for function main:
    0x000000000002ef45 <+885>:	lea    0xfbd14(%rip),%rdi        # 0x12ac60 <top_level>
    0x000000000002ef4c <+892>:	movl   $0x1,0xf27c2(%rip)        # 0x121718
    0x000000000002ef56 <+902>:	callq  0x2eab0 <__sigsetjmp@plt>
-   0x000000000002ef5b <+907>:	endbr64 
+   0x000000000002ef5b <+907>:	endbr64
    0x000000000002ef5f <+911>:	test   %eax,%eax
    0x000000000002ef61 <+913>:	jne    0x2ec7c <main+172>
    0x000000000002ef67 <+919>:	mov    0x18(%rsp),%rax
@@ -495,7 +495,7 @@ Dump of assembler code for function main:
    0x000000000002f570 <+2464>:	mov    0xf3982(%rip),%eax        # 0x122ef8 <exit_immediately_on_error>
    0x000000000002f576 <+2470>:	mov    %eax,0x2c(%rsp)
    0x000000000002f57a <+2474>:	callq  0x2eab0 <__sigsetjmp@plt>
-   0x000000000002f57f <+2479>:	endbr64 
+   0x000000000002f57f <+2479>:	endbr64
    0x000000000002f583 <+2483>:	test   %eax,%eax
    0x000000000002f585 <+2485>:	je     0x2f5b3 <main+2531>
    0x000000000002f587 <+2487>:	sub    $0x3,%eax
