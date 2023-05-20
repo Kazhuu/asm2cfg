@@ -365,7 +365,7 @@ def parse_target(line):
     """
     Parses optional instruction branch target hint
     """
-    target_match = re.match(r'\s*<([a-zA-Z_@0-9]+)([+-]0x[0-9a-f]+|[+-][0-9]+)?>(.*)', line)
+    target_match = re.match(r'\s*<([a-zA-Z_@.0-9]+)([+-]0x[0-9a-f]+|[+-][0-9]+)?>(.*)', line)
     if target_match is None:
         return None, line
     offset = target_match[2] or '+0'
