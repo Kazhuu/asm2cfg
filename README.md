@@ -2,8 +2,6 @@
 # asm2cfg
 ![CI status](https://github.com/Kazhuu/asm2cfg/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/Kazhuu/asm2cfg/branch/main/graph/badge.svg?token=ZHLOJO8Q3V)](https://codecov.io/gh/Kazhuu/asm2cfg)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/Kazhuu/asm2cfg.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Kazhuu/asm2cfg/alerts/)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Kazhuu/asm2cfg.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Kazhuu/asm2cfg/context:python)
 
 Python command-line tool and GDB extension to view and save x86, ARM and objdump
 assembly files as control-flow graph (CFG) pdf files. From GDB debugging session
@@ -27,17 +25,17 @@ or create a pull request. If you want to contribute, check
 * [Install](#install)
 * [Usage From GDB](#usage-from-gdb)
 * [Usage as Standalone](#usage-as-standalone)
-  * [Knowing Function Name](#knowing-function-name)
-  * [Disassemble Function](#disassemble-function)
-  * [Draw CFG](#draw-cfg)
-  * [Examples](#examples)
+    * [Knowing Function Name](#knowing-function-name)
+    * [Disassemble Function](#disassemble-function)
+    * [Draw CFG](#draw-cfg)
+    * [Examples](#examples)
 * [Development](#development)
-  * [Python Environment](#python-environment)
-  * [Testing](#testing)
-  * [Code Linting](#code-linting)
-  * [Command-Line Interface](#command-line-interface)
-  * [GDB Integration](#gdb-integration)
-  * [Current Development Goals](#current-development-goals)
+    * [Python Environment](#python-environment)
+    * [Testing](#testing)
+    * [Code Linting](#code-linting)
+    * [Command-Line Interface](#command-line-interface)
+    * [GDB Integration](#gdb-integration)
+    * [Current Development Goals](#current-development-goals)
 
 <!-- vim-markdown-toc -->
 

@@ -271,7 +271,9 @@ Dump of assembler code for function main:
 
         self.assertEqual(len(blocks), 2)
 
-        ret_block, other_block = blocks.values()
+        blocks = list(blocks.values())
+        ret_block = blocks[0]
+        other_block = blocks[1]
 
         self.assertIs(ret_block.jump_edge, None)
         self.assertIs(ret_block.no_jump_edge, None)
