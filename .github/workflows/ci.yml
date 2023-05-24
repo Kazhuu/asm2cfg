@@ -14,11 +14,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04, ubuntu-latest]
-        py: [python3.6, python3.7, python3]  # 3.5 lacks f-strings
-        exclude:
-          - os: ubuntu-latest # Python 3.6 not supported on Ubuntu 22.04 Jammy.
-            py: python3.6
+        # Ubuntu 20.04 python3 = 3.8
+        # Ubuntu 22.04 python3 = 3.10
+        os: [ubuntu-20.04, ubuntu-latest]
+        py: [python3.7, python3.9, python3]
     runs-on: ${{ matrix.os }}
     env:
       PYTHON: ${{ matrix.py }}
@@ -28,14 +27,7 @@ jobs:
       run: |
         sudo add-apt-repository ppa:deadsnakes/ppa
         scripts/install-deps.sh
-    - name: Install pipenv Ubuntu 18.04
-      # Why specific version of pipenv, check this https://github.com/pypa/pipenv/issues/4829
-      if: matrix.os == 'ubuntu-18.04'
-      run: |
-        ${{ matrix.py }} -m pip install pipenv==2021.5.29
-        pipenv install --dev
-    - name: Install pipenv others
-      if: matrix.os != 'ubuntu-18.04'
+    - name: Install pipenv
       run: |
         ${{ matrix.py }} -m pip install pipenv
         pipenv install --dev
