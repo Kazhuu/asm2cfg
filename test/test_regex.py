@@ -154,6 +154,16 @@ class ParseTargetTestCase(unittest.TestCase):
         self.assertEqual(address.offset, 0)
         self.assertEqual(rest, '')
 
+    def test_with_dot(self):
+        line = '<stdin@GLIBC_2.2.5>'
+        address, rest = asm2cfg.parse_target(line)
+
+        self.assertIsNot(address, None)
+        self.assertIs(address.abs, None)
+        self.assertEqual(address.base, 'stdin@GLIBC_2.2.5')
+        self.assertEqual(address.offset, 0)
+        self.assertEqual(rest, '')
+
 
 class ParseCommentTestCase(unittest.TestCase):
     """
