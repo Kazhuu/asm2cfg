@@ -1,3 +1,6 @@
+Valid-License-Identifier: MauriMustonen
+License-Text:
+
 MIT License
 
 Copyright (c) 2021 Mauri Mustonen
