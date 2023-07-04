@@ -67,7 +67,7 @@ def main():
         disassembler=args.diss, arch=args.arch, logging_preset=args.logger
     )
 
-    lines = read_lines(args.assembly_file)
+    lines = read_lines(args.file)
 
     analyser = Analyzer(config=config)
     analyser.parse_lines(lines=lines)
