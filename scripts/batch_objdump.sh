@@ -115,11 +115,13 @@ function_array=(
     fmaf
 )
 
-objdump=../rtems-6-sparc-gr740-smp-4/bin/sparc-rtems6-objdump
-application=../examples/gr740/smp/libmcs/b-gr740-qual-only/app.exe
-asm_folder=../qualification/asm
-pdf_folder=../qualification/pdf
-coverage_file=../coverage-tracer/ExecuteTestRun.csv
+objdump=objdump
+
+application=./qualification/code/app.exe
+coverage_file=./qualification/code/app.exe.csv
+
+asm_folder=./qualification/asm
+pdf_folder=./qualification/pdf
 
 mkdir -p $asm_folder
 mkdir -p $pdf_folder
@@ -127,7 +129,7 @@ mkdir -p $pdf_folder
 for i in ${function_array[@]}
 do
   $objdump -d $application | sed -ne '/<'$i'>:/,/^$/p' > $asm_folder/$i.asm
-  ./asm2cfg -c $coverage_file --preset 'sparc OBJDUMP' $asm_folder/$i.asm
+  python -m ocgraph -c $coverage_file -d 'OBJDUMP' -a sparc -f $asm_folder/$i.asm
 done
 
 mv *.pdf $pdf_folder/
