@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Class for parsing the input"""
+"""Class for parsing the objdump SPARC input"""
 
 import re
 from typing import List
@@ -15,10 +15,10 @@ HEX_PATTERN = r"[0-9a-fA-F]+"
 HEX_LONG_PATTERN = r"(?:0x0*)?" + HEX_PATTERN
 
 
-class ObjDumpDisassembler(Disassembler):
-    """Objdump disassembler"""
+class ObjDumpSparcDisassembler(Disassembler):
+    """Objdump SPARC disassembler"""
 
-    name: str = "Default Objdump Disassembler (SparcV8 Binutils)"
+    name: str = "SPARC Objdump Disassembler (SparcV8 Binutils)"
 
     # Expected format: <hex address> <<label+offset>>: <opcode> <interpreted opcode>
     regex: str = r"(\S+)( <(\S+)>|):\s+([\S ]+)\s([\S  ]+)"

@@ -6,6 +6,7 @@
 from abc import ABC, abstractmethod
 
 from ..architecture.sparc import SparcArchitecture
+from ..architecture.ppc import PpcArchitecture
 from ...data.instruction import Instruction
 
 
