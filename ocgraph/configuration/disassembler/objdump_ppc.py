@@ -12,7 +12,7 @@ from .disassembler import Disassembler, DisassemblerError
 
 # Common regexes
 HEX_PATTERN = r"[0-9a-fA-F]+"
-HEX_LONG_PATTERN = r"(?:0x0*)?" + HEX_PATTERN
+HEX_LONG_PATTERN = r"(?:0x0*)" + HEX_PATTERN
 
 
 class ObjDumpPpcDisassembler(Disassembler):
@@ -116,10 +116,10 @@ class ObjDumpPpcDisassembler(Disassembler):
         '50:	f7ff fffe 	bl	0 <__aeabi_dadd>'
         '54:	0002      	movs	r2, r0'
         """
-        # Encoding is separated from assembly mnemonic via tab
-        # so we allow whitespace separators between bytes
+        # Encoding is separated from assembly mnemonic via tab (only in objdump not for llvm-objdump)
+        # so we allow only 1 white space separator between bytes for compatibility with llvm-objdump
         # to avoid accidentally matching the mnemonic.
-        enc_match = re.match(r"^\s*((?:[0-9a-f]{2,8} +)+)(.*)", line)
+        enc_match = re.match(r"^\s*((?:(?:[0-9a-f]{2,8} )+)+)(.*)", line)
         if enc_match is None:
             return None, line
         bites = []

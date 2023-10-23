@@ -160,6 +160,7 @@ class Analyzer:
 
             # End current block if current opcode is a jump/branch/sink
             if jump_target:
+                print(instruction)
                 curr_basic_block.add_jump_edge(jump_target.abs)
                 prev_branch_block = curr_basic_block if is_branch else None
                 block_completion = self.configuration.architecture.get_jump_delay(instruction)
