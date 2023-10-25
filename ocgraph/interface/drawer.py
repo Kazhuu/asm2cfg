@@ -2,6 +2,7 @@
 """Class for drawing the output."""
 
 import tempfile
+
 from typing import Dict
 
 from graphviz import Digraph
@@ -36,9 +37,9 @@ class Drawer:
         Escape used dot graph characters in given instruction so they will be
         displayed correctly.
         """
-        text = text.replace("<", r"[")
-        text = text.replace(">", r"]")
-        text = text.replace("\t", " ")
+        text = text.replace("<", r"&lt;")
+        text = text.replace(">", r"&gt;")
+        text = text.replace("\t", "&#9;")
         return text
 
     def _create_label(self, basic_block: BasicBlock, line_coverage=False):
@@ -54,7 +55,7 @@ class Drawer:
             label += (
                 "<TR>"
                 f'<TD ALIGN="LEFT" COLSPAN="2" BGCOLOR="{bg_color}" >'
-                f"0x{instr.address.abs:x}:  {Drawer._escape(text=instr.text)}"
+                f"0x{instr.address.abs:0>8x}:   {instr.opcode:<10} {Drawer._escape(text=instr.text.removeprefix(instr.opcode).strip())}"
                 "</TD></TR>\n"
             )
             if self.config.architecture.is_sink(instr):
@@ -82,6 +83,9 @@ class Drawer:
         """Create a cgf"""
         dot = Digraph(name=name, comment=name, engine="dot")
         dot.attr("graph", label=name)
+        dot.attr("graph", fontname="Mono")
+        dot.attr("node", fontname="Mono")
+        dot.attr("edge", fontname="Mono")
 
         # Create nodes in graph
         for address, basic_block in basic_blocks.items():
