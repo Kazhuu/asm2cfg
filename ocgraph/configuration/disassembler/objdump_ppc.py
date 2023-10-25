@@ -139,7 +139,7 @@ class ObjDumpPpcDisassembler(Disassembler):
         if opcode_match is None:
             return None, None, None, line
         opcode = opcode_match[1]
-        ops = opcode_match[2].split(",") if opcode_match[2] else []
+        ops = [op.strip() for op in opcode_match[2].split(",")] if opcode_match[2] else []
         return body, opcode, ops, line
 
     def parse_target(self, line: str) -> (Address, str):
@@ -149,6 +149,7 @@ class ObjDumpPpcDisassembler(Disassembler):
         target_match = re.match(r"\s*<([.a-zA-Z_@0-9]+)([+-]0x[0-9a-f]+|[+-][0-9]+)?>(.*)", line)
         if target_match is None:
             return None, line
+        print("target parse" + str(target_match))
         offset = target_match[2] or "+0"
         address = Address(None, target_match[1], int(offset, 0))
         return address, target_match[3]
@@ -210,7 +211,7 @@ class ObjDumpPpcDisassembler(Disassembler):
         if target is not None and target.base is None:
             target.base = function_name
 
-        return Instruction(
+        instruction = Instruction(
             body,
             original_line.strip(),
             lineno,
@@ -219,3 +220,5 @@ class ObjDumpPpcDisassembler(Disassembler):
             ops,
             target,
         )
+
+        return instruction

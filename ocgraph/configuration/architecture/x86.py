@@ -24,13 +24,13 @@ class X86Architecture(Architecture):
         #   addr32 call 0x55555558add0
         return "call" in instruction.opcode
 
-    def is_jump(self, instruction: Instruction):
+    def is_branch(self, instruction: Instruction):
         return instruction.opcode[0] == "j"
 
-    def is_direct_jump(self, instruction: Instruction):
-        return self.is_jump(instruction) and re.match(rf"{HEX_LONG_PATTERN}", instruction.ops[0])
+    def is_direct_branch(self, instruction: Instruction):
+        return self.is_branch(instruction) and re.match(rf"{HEX_LONG_PATTERN}", instruction.ops[0])
 
-    def is_branch(self, instruction: Instruction):
+    def is_unconditional_branch(self, instruction: Instruction):
         return instruction.opcode.startswith("jmp")
 
     def is_sink(self, instruction: Instruction):

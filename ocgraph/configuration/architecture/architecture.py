@@ -19,26 +19,26 @@ class Architecture(ABC):
 
     @abstractmethod
     def is_call(self, instruction: Instruction) -> bool:
-        """Return if disassembled instruction is a call"""
+        """Return if disassembled instruction is a subroutine call"""
         raise NotImplementedError()
 
     @abstractmethod
-    def is_jump(self, instruction: Instruction) -> bool:
-        """Return if disassembled instruction is a jump"""
+    def is_unconditional_branch(self, instruction: Instruction) -> bool:
+        """Return if disassembled instruction is an unconditional branch"""
         raise NotImplementedError()
 
-    def get_jump_delay(self, instruction: Instruction) -> int | None:
-        """Return the jump delay of an instruction or None if not a jump"""
-        return 1 if self.is_jump(instruction) else None
+    def get_branch_delay(self, instruction: Instruction) -> int | None:
+        """Return the branch delay of an instruction or None if not a branch"""
+        return 1 if self.is_branch(instruction) else None
 
     @abstractmethod
-    def is_direct_jump(self, instruction: Instruction) -> bool:
-        """Return if disassembled instruction is a direct jump"""
+    def is_direct_branch(self, instruction: Instruction) -> bool:
+        """Return if disassembled instruction is a direct branch"""
         raise NotImplementedError()
 
     @abstractmethod
     def is_branch(self, instruction: Instruction) -> bool:
-        """Return if disassembled instruction is a conditional jump"""
+        """Return if disassembled instruction is a conditional branch"""
         raise NotImplementedError()
 
     @abstractmethod

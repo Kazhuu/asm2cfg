@@ -83,10 +83,14 @@ class Instruction:
         result = f"{self.address}: {self.opcode}"
         if self.ops:
             result += f" {self.ops}"
+        if self.target is not None:
+            result += " -> " + str(self.target)
         return result
 
     def __repr__(self) -> str:
         result = f"{self.address}: {self.opcode}"
         if self.ops:
             result += f" {self.ops}"
+        if self.target is not None:
+            result += " -> " + str(self.target)
         return result

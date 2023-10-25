@@ -47,17 +47,17 @@ sparc_v8_delayed_opcodes = sparc_v8_Bicc_opcodes + \
                            sparc_v8_branch_cond_delay_opcodes + \
                            sparc_v8_remaining_jump_opcodes
 
-sparc_v8_jump_opcodes = sparc_v8_Bicc_opcodes + \
+sparc_v8_branch_opcodes = sparc_v8_Bicc_opcodes + \
                           sparc_v8_FBfcc_opcodes + \
                           sparc_v8_CBfcc_opcodes + \
                           sparc_v8_Ticc_opcodes + \
                           sparc_v8_branch_cond_delay_opcodes + \
                           sparc_v8_remaining_jump_opcodes
 
-sparc_v8_branch_opcodes = sparc_v8_Bicc_opcodes + \
-                          sparc_v8_FBfcc_opcodes + \
-                          sparc_v8_CBfcc_opcodes + \
-                          sparc_v8_branch_cond_delay_opcodes
+sparc_v8_unconditional_branch_opcodes = sparc_v8_Bicc_opcodes + \
+                                        sparc_v8_FBfcc_opcodes + \
+                                        sparc_v8_CBfcc_opcodes + \
+                                        sparc_v8_branch_cond_delay_opcodes
 # fmt: on
 
 
@@ -70,10 +70,10 @@ class SparcArchitecture(Architecture):
     def is_call(self, instruction: Instruction):
         return instruction.opcode == "call"
 
-    def is_jump(self, instruction: Instruction):
-        return instruction.opcode in sparc_v8_jump_opcodes
+    def is_branch(self, instruction: Instruction):
+        return instruction.opcode in sparc_v8_branch_opcodes
 
-    def get_jump_delay(self, instruction: Instruction) -> int | None:
+    def get_branch_delay(self, instruction: Instruction) -> int | None:
         delay = None
         if instruction.opcode in sparc_v8_delayed_opcodes:
             delay = 2
@@ -83,12 +83,12 @@ class SparcArchitecture(Architecture):
             delay = 1
         return delay
 
-    def is_direct_jump(self, instruction: Instruction):
-        # every jump is disassembled with the complete offset
-        return self.is_jump(instruction)
+    def is_direct_branch(self, instruction: Instruction):
+        # every branch is disassembled with the complete offset
+        return self.is_branch(instruction) or self.is_unconditional_brach(instruction)
 
-    def is_branch(self, instruction: Instruction):
-        return instruction.opcode in sparc_v8_branch_opcodes
+    def is_unconditional_branch(self, instruction: Instruction):
+        return instruction.opcode in sparc_v8_unconditional_branch_opcodes
 
     def is_sink(self, instruction: Instruction):
         # ret: return from subroutine

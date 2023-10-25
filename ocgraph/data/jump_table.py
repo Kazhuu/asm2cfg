@@ -25,7 +25,7 @@ class JumpTable:
 
         # Iterate over the lines and collect jump targets and branching points.
         for instr in instructions:
-            if instr is None or not self.config.architecture.is_direct_jump(instr):
+            if instr is None or not self.config.architecture.is_direct_branch(instr):
                 continue
 
             self.abs_sources[instr.address.abs] = instr.target
