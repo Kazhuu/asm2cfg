@@ -7,7 +7,7 @@ from ...data.instruction import Instruction
 
 
 class Architecture(ABC):
-    """TargetInfo Class"""
+    """TargetInfo Class defining the target specific instruction set characteristics"""
 
     def __init__(self):
         pass
@@ -38,7 +38,7 @@ class Architecture(ABC):
 
     @abstractmethod
     def is_branch(self, instruction: Instruction) -> bool:
-        """Return if disassembled instruction is a conditional branch"""
+        """Return if disassembled instruction is a branch instruction (conditional or unconditional)"""
         raise NotImplementedError()
 
     @abstractmethod

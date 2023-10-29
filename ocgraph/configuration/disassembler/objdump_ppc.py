@@ -149,7 +149,6 @@ class ObjDumpPpcDisassembler(Disassembler):
         target_match = re.match(r"\s*<([.a-zA-Z_@0-9]+)([+-]0x[0-9a-f]+|[+-][0-9]+)?>(.*)", line)
         if target_match is None:
             return None, line
-        print("target parse" + str(target_match))
         offset = target_match[2] or "+0"
         address = Address(None, target_match[1], int(offset, 0))
         return address, target_match[3]
@@ -222,3 +221,7 @@ class ObjDumpPpcDisassembler(Disassembler):
         )
 
         return instruction
+
+    def parse_jump_target(self, str_input: str) -> int | None:
+        return int(re.search(rf"{HEX_LONG_PATTERN}", str_input)[0], 16)
+

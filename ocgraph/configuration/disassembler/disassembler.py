@@ -43,3 +43,9 @@ class Disassembler(ABC):
     @abstractmethod
     def parse_line(self, line: str, lineno, function_name: str) -> Instruction | None:
         """Parses a single line of assembly to create Instruction instance"""
+
+    @abstractmethod
+    def parse_jump_target(self, str_input: str) -> int | None:
+        """Parses a string (e.g., coma separated operands) and returns
+        the jump target value
+        """

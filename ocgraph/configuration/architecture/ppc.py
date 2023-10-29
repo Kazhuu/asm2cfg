@@ -12,6 +12,14 @@ HEX_PATTERN = r'[0-9a-fA-F]+'
 HEX_LONG_PATTERN = r'(?:0x0*)' + HEX_PATTERN
 
 # fmt: off
+ppc_call_opcodes = [
+    "bl",
+]
+
+ppc_sink_opcodes = [
+    "blr",
+]
+
 ppc_unconditional_branch_opcodes = [
     "b", "ba", "bla",
     "bctr", "bctrl", "blrl",
@@ -37,16 +45,16 @@ class PpcArchitecture(Architecture):
         return "#"
 
     def is_call(self, instruction: Instruction):
-        return instruction.opcode == "bl"
+        return instruction.opcode in ppc_call_opcodes
 
     def is_branch(self, instruction: Instruction):
-        return instruction.opcode in ppc_conditional_branch_opcodes or ppc_unconditional_branch_opcodes and not self.is_call(instruction)
+        return instruction.opcode in (ppc_conditional_branch_opcodes + ppc_unconditional_branch_opcodes) and not self.is_call(instruction)
 
     def is_unconditional_branch(self, instruction: Instruction):
         return instruction.opcode in ppc_unconditional_branch_opcodes
 
     def is_sink(self, instruction: Instruction):
-        return instruction.opcode == "blr"
+        return instruction.opcode in ppc_sink_opcodes
 
     def is_direct_branch(self, instruction: Instruction):
         return self.is_branch(instruction) and (re.search(rf"{HEX_LONG_PATTERN}", '|'.join(instruction.ops)))

@@ -2,7 +2,6 @@
 """Class for read and analyze the input string."""
 
 import sys
-import re
 
 from ..data.address import Address
 from ..data.basic_block import BasicBlock
@@ -11,10 +10,6 @@ from ..data.instruction import Instruction
 from ..data.jump_table import JumpTable
 
 from ..configuration.configuration import OcGraphConfiguration, Disassembler
-
-# Common regexes
-HEX_PATTERN = r"[0-9a-fA-F]+"
-HEX_LONG_PATTERN = r"(?:0x0*)" + HEX_PATTERN
 
 
 class Analyzer:
@@ -84,7 +79,7 @@ class Analyzer:
                 # parse the absolute target out of the operands
                 # (first hex address is assumed to be the target address)
                 print("direct branch without target: " + str(instr))
-                instr.target.abs = int(re.search(rf"{HEX_LONG_PATTERN}", '|'.join(instr.ops))[0], 16)
+                instr.target.abs = self.parser.parse_jump_target('|'.join(instr.ops))
 
         # Infer relative addresses (for objdump or stripped gdb)
         start_address = self.instructions[0].address.abs

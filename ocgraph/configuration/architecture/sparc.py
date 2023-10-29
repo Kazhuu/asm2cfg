@@ -6,6 +6,16 @@ from ...data.instruction import Instruction
 
 
 # fmt: off
+sparc_v8_call_opcodes = [
+    "call",
+]
+
+sparc_v8_sink_opcodes = [
+    # ret: return from subroutine
+    # retl: return from leaf subroutine
+    "ret", "retl",
+]
+
 sparc_v8_Bicc_opcodes = [
     # conditional icc branch opcodes
     "ba", "bn", "bne", "be", "bg", "ble", "bge", "bl", "bgu", "bleu", "bcc",
@@ -25,7 +35,7 @@ sparc_v8_CBfcc_opcodes = [
 ]
 
 sparc_v8_Ticc_opcodes = [
-    # condictional traps on icc
+    # conditional traps on icc
     "ta", "tn", "tne", "te", "tg", "tle", "tge", "tl", "tgu", "tleu", "tcc",
     "tcs", "tpos", "tneg", "tvc", "tvs",
 ]
@@ -37,27 +47,21 @@ sparc_v8_branch_cond_delay_opcodes = [
     sparc_v8_CBfcc_opcodes
 ]
 
-sparc_v8_remaining_jump_opcodes = [
-    "jmpl", "jmp", "b",  # "call", "ret", retl not regarded currently
+sparc_v8_unconditional_branch_opcodes = [
+    "jmpl", "jmp", "b",
 ]
 
 sparc_v8_delayed_opcodes = sparc_v8_Bicc_opcodes + \
                            sparc_v8_FBfcc_opcodes + \
                            sparc_v8_CBfcc_opcodes + \
                            sparc_v8_branch_cond_delay_opcodes + \
-                           sparc_v8_remaining_jump_opcodes
+                           sparc_v8_unconditional_branch_opcodes
 
-sparc_v8_branch_opcodes = sparc_v8_Bicc_opcodes + \
-                          sparc_v8_FBfcc_opcodes + \
-                          sparc_v8_CBfcc_opcodes + \
-                          sparc_v8_Ticc_opcodes + \
-                          sparc_v8_branch_cond_delay_opcodes + \
-                          sparc_v8_remaining_jump_opcodes
-
-sparc_v8_unconditional_branch_opcodes = sparc_v8_Bicc_opcodes + \
-                                        sparc_v8_FBfcc_opcodes + \
-                                        sparc_v8_CBfcc_opcodes + \
-                                        sparc_v8_branch_cond_delay_opcodes
+sparc_v8_conditional_branch_opcodes = sparc_v8_Bicc_opcodes + \
+                                      sparc_v8_FBfcc_opcodes + \
+                                      sparc_v8_CBfcc_opcodes + \
+                                      sparc_v8_Ticc_opcodes + \
+                                      sparc_v8_branch_cond_delay_opcodes
 # fmt: on
 
 
@@ -68,10 +72,10 @@ class SparcArchitecture(Architecture):
         return "!"
 
     def is_call(self, instruction: Instruction):
-        return instruction.opcode == "call"
+        return instruction.opcode in sparc_v8_call_opcodes
 
     def is_branch(self, instruction: Instruction):
-        return instruction.opcode in sparc_v8_branch_opcodes
+        return instruction.opcode in (sparc_v8_conditional_branch_opcodes + sparc_v8_unconditional_branch_opcodes)
 
     def get_branch_delay(self, instruction: Instruction) -> int | None:
         delay = None
@@ -85,12 +89,10 @@ class SparcArchitecture(Architecture):
 
     def is_direct_branch(self, instruction: Instruction):
         # every branch is disassembled with the complete offset
-        return self.is_branch(instruction) or self.is_unconditional_brach(instruction)
+        return self.is_branch(instruction)
 
     def is_unconditional_branch(self, instruction: Instruction):
         return instruction.opcode in sparc_v8_unconditional_branch_opcodes
 
     def is_sink(self, instruction: Instruction):
-        # ret: return from subroutine
-        # retl: return from leaf subroutine
-        return instruction.opcode in ["ret", "retl"]
+        return instruction.opcode in sparc_v8_sink_opcodes
