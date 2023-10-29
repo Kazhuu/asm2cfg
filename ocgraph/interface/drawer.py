@@ -75,7 +75,7 @@ class Drawer:
         if basic_block.jump_edge:
             label += f'<TD BORDER="1" COLSPAN="{span}" PORT="jump">JUMP</TD>'
         if not basic_block.jump_edge and not basic_block.no_jump_edge:
-            label += f'<TD BORDER="1" COLSPAN="2">RETURN targets: {str(returns)}</TD>'
+            label += f'<TD BORDER="1" COLSPAN="2">RETURN targets: {str(returns) if returns else "--"}</TD>'
         label += "</TR> \n</TABLE> >"
         return label
 
