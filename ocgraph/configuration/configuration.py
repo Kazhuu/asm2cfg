@@ -58,7 +58,7 @@ preset_logging: dict[str, dict] = {
         "console_level": logging.ERROR,
     },
     "default": {
-        "file_log": "asm2fg.log",
+        "file_log": "asm2cfg.log",
         "file_level": logging.INFO,
         "console_log": True,
         "console_level": logging.INFO,

@@ -78,7 +78,6 @@ class Analyzer:
                     instr.target = Address(0)
                 # parse the absolute target out of the operands
                 # (first hex address is assumed to be the target address)
-                print("direct branch without target: " + str(instr))
                 instr.target.abs = self.parser.parse_jump_target('|'.join(instr.ops))
 
         # Infer relative addresses (for objdump or stripped gdb)
@@ -141,7 +140,6 @@ class Analyzer:
             pc_addr = instruction.address
             # Get optional jump target
             jump_target = self.jump_table.get_target(pc_addr)
-            print("jump target: " + str(jump_target))
             is_unconditional = self.configuration.architecture.is_unconditional_branch(instruction)
 
             # Start new blocks if last ended
@@ -164,7 +162,6 @@ class Analyzer:
 
             # End current block if current opcode is a jump/branch/sink
             if jump_target:
-                print("has jump target: " + str(instruction))
                 curr_basic_block.add_jump_edge(jump_target.abs)
                 prev_branch_block = None if is_unconditional else curr_basic_block
                 block_completion = self.configuration.architecture.get_branch_delay(instruction)
