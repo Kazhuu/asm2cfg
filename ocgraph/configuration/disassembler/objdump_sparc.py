@@ -220,5 +220,6 @@ class ObjDumpSparcDisassembler(Disassembler):
             target,
         )
 
-    def parse_jump_target(self, str_input: str) -> int | None:
-        return int(re.search(rf"{HEX_LONG_PATTERN}", str_input)[0], 16)
+    def parse_jump_target(self, ops: List[str]) -> int | None:
+        # it assumes the first operand to contain the target address
+        return int(ops.pop(), 16)

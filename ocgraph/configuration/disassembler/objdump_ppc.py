@@ -12,7 +12,7 @@ from .disassembler import Disassembler, DisassemblerError
 
 # Common regexes
 HEX_PATTERN = r"[0-9a-fA-F]+"
-HEX_LONG_PATTERN = r"(?:0x0*)" + HEX_PATTERN
+HEX_LONG_PATTERN = r"(?:0x0*)?" + HEX_PATTERN
 
 
 class ObjDumpPpcDisassembler(Disassembler):
@@ -222,6 +222,8 @@ class ObjDumpPpcDisassembler(Disassembler):
 
         return instruction
 
-    def parse_jump_target(self, str_input: str) -> int | None:
-        return int(re.search(rf"{HEX_LONG_PATTERN}", str_input)[0], 16)
+    def parse_jump_target(self, ops: List[str]) -> int | None:
+        # it assumes the last operand of the branch to be the target address
+        return int(ops.pop(), 16)
+
 

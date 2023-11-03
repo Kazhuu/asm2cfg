@@ -78,7 +78,7 @@ class Analyzer:
                     instr.target = Address(0)
                 # parse the absolute target out of the operands
                 # (first hex address is assumed to be the target address)
-                instr.target.abs = self.parser.parse_jump_target('|'.join(instr.ops))
+                instr.target.abs = self.parser.parse_jump_target(instr.ops)
 
         # Infer relative addresses (for objdump or stripped gdb)
         start_address = self.instructions[0].address.abs
