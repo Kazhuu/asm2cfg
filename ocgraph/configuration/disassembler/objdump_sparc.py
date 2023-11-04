@@ -222,4 +222,4 @@ class ObjDumpSparcDisassembler(Disassembler):
 
     def parse_jump_target(self, ops: List[str]) -> int | None:
         # it assumes the first operand to contain the target address
-        return int(ops.pop(), 16)
+        return int(ops[-1], 16)
