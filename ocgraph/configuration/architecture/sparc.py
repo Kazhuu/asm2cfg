@@ -48,7 +48,7 @@ sparc_v8_branch_cond_delay_opcodes = [
 ]
 
 sparc_v8_unconditional_branch_opcodes = [
-    "jmpl", "jmp", "b",
+    "jmpl", "jmp", "b", "b,a"
 ]
 
 sparc_v8_delayed_opcodes = sparc_v8_Bicc_opcodes + \

@@ -12,16 +12,19 @@ from .disassembler.disassembler import Disassembler
 from .disassembler.objdump_sparc import ObjDumpSparcDisassembler
 from .disassembler.objdump_ppc import ObjDumpPpcDisassembler
 from .disassembler.gdb_default import GdbDisassembler
+from .disassembler.objdump_x86 import ObjDumpx86Disassembler
 
 # fmt: off
 disassembler_option: dict[str, dict] = {
     "OBJDUMP": {
         "sparc": ObjDumpSparcDisassembler(),
         "ppc": ObjDumpPpcDisassembler(),
+        "x86": ObjDumpx86Disassembler(),
     },
     "GDB": {
         "sparc": GdbDisassembler(),
         "ppc": GdbDisassembler(),
+        "x86": GdbDisassembler(),
     },
 }
 
