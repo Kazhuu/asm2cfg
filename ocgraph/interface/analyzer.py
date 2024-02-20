@@ -73,10 +73,12 @@ class Analyzer:
         for instr in self.instructions:
             if (
                 instr.target is None or instr.target.abs is None
-            ) and self.configuration.architecture.is_direct_jump(instr):
+            ) and self.configuration.architecture.is_direct_branch(instr):
                 if instr.target is None:
                     instr.target = Address(0)
-                instr.target.abs = int(instr.ops[0], 16)
+                # parse the absolute target out of the operands
+                # (first hex address is assumed to be the target address)
+                instr.target.abs = self.parser.parse_jump_target(instr.ops)
 
         # Infer relative addresses (for objdump or stripped gdb)
         start_address = self.instructions[0].address.abs
@@ -136,9 +138,9 @@ class Analyzer:
 
             # Current program counter
             pc_addr = instruction.address
-            # Optional jump target
+            # Get optional jump target
             jump_target = self.jump_table.get_target(pc_addr)
-            is_branch = self.configuration.architecture.is_branch(instruction)
+            is_unconditional = self.configuration.architecture.is_unconditional_branch(instruction)
 
             # Start new blocks if last ended
             if curr_basic_block is None:
@@ -161,10 +163,10 @@ class Analyzer:
             # End current block if current opcode is a jump/branch/sink
             if jump_target:
                 curr_basic_block.add_jump_edge(jump_target.abs)
-                prev_branch_block = curr_basic_block if is_branch else None
-                block_completion = self.configuration.architecture.get_jump_delay(instruction)
+                prev_branch_block = None if is_unconditional else curr_basic_block
+                block_completion = self.configuration.architecture.get_branch_delay(instruction)
             elif self.configuration.architecture.is_sink(instruction):
-                block_completion = self.configuration.architecture.get_jump_delay(instruction)
+                block_completion = self.configuration.architecture.get_branch_delay(instruction)
                 prev_branch_block = None
 
         if prev_branch_block is not None:

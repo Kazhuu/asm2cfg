@@ -28,13 +28,13 @@ class ArmArchitecture(Architecture):
             "bls",
         )
 
-    def is_jump(self, instruction: Instruction):
+    def is_branch(self, instruction: Instruction):
         return instruction.opcode[0] == "b" and not self.is_call(instruction)
 
-    def is_direct_jump(self, instruction: Instruction):
-        return self.is_jump(instruction) and re.match(rf"{HEX_LONG_PATTERN}", instruction.ops[0])
+    def is_direct_branch(self, instruction: Instruction):
+        return self.is_branch(instruction) and re.match(rf"{HEX_LONG_PATTERN}", instruction.ops[0])
 
-    def is_branch(self, instruction: Instruction):
+    def is_unconditional_branch(self, instruction: Instruction):
         return instruction.opcode == "b"
 
     def is_sink(self, instruction: Instruction):

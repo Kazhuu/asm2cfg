@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Class for parsing the input"""
+"""Class for parsing the objdump SPARC input"""
 
 import re
 from typing import List
@@ -15,10 +15,10 @@ HEX_PATTERN = r"[0-9a-fA-F]+"
 HEX_LONG_PATTERN = r"(?:0x0*)?" + HEX_PATTERN
 
 
-class GdbDisassembler(Disassembler):
-    """x86 GDB disassembler"""
+class ObjDumpSparcDisassembler(Disassembler):
+    """Objdump SPARC disassembler"""
 
-    name: str = "Default GDB Disassembler (x86 Binutils)"
+    name: str = "SPARC Objdump Disassembler (SparcV8 Binutils)"
 
     # Expected format: <hex address> <<label+offset>>: <opcode> <interpreted opcode>
     regex: str = r"(\S+)( <(\S+)>|):\s+([\S ]+)\s([\S  ]+)"
@@ -55,6 +55,7 @@ class GdbDisassembler(Disassembler):
             }
         else:
             raise DisassemblerError("Line not processable: \n" + str(str_input))
+
         return result
 
     def parse_function_header(self, line: str) -> str | None:
@@ -145,7 +146,7 @@ class GdbDisassembler(Disassembler):
         """
         Parses optional instruction branch target hint
         """
-        target_match = re.match(r"\s*<([a-zA-Z_@0-9]+)([+-]0x[0-9a-f]+|[+-][0-9]+)?>(.*)", line)
+        target_match = re.match(r"\s*<([.a-zA-Z_@0-9]+)([+-]0x[0-9a-f]+|[+-][0-9]+)?>(.*)", line)
         if target_match is None:
             return None, line
         offset = target_match[2] or "+0"
@@ -176,7 +177,9 @@ class GdbDisassembler(Disassembler):
         return target, imm_match[3]
 
     def parse_line(self, line: str, lineno, function_name: str) -> Instruction | None:
-        """Parses a single line of assembly to create Instruction instance"""
+        """
+        Parses a single line of assembly to create Instruction instance
+        """
         # Strip GDB prefix and leading whites
         line = line.removeprefix("=> ")
         line = line.lstrip()
@@ -184,6 +187,10 @@ class GdbDisassembler(Disassembler):
         address, line = self.parse_address(line)
         if address is None:
             return None
+
+        encoding, line = self.parse_encoding(line)
+        if not line:
+            return encoding
 
         original_line = line
         body, opcode, ops, line = self.parse_body(line)
@@ -213,5 +220,6 @@ class GdbDisassembler(Disassembler):
             target,
         )
 
-    def parse_jump_target(self, str_input: str) -> int | None:
-        return int(re.search(rf"{HEX_LONG_PATTERN}", str_input)[0], 16)
+    def parse_jump_target(self, ops: List[str]) -> int | None:
+        # it assumes the first operand to contain the target address
+        return int(ops[-1], 16)

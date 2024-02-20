@@ -19,7 +19,7 @@ class Address:
         return not self.is_absolute()
 
     def __str__(self):
-        if self.offset is not None:
+        if self.offset is not None and self.abs is not None:
             return f"0x{self.abs:x} ({self.base}+0x{self.offset:x})"
         if isinstance(self.abs, int):
             return f"0x{self.abs:x}"

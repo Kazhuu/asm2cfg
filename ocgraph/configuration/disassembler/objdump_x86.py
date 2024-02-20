@@ -15,10 +15,10 @@ HEX_PATTERN = r"[0-9a-fA-F]+"
 HEX_LONG_PATTERN = r"(?:0x0*)?" + HEX_PATTERN
 
 
-class ObjDumpDisassembler(Disassembler):
-    """Objdump disassembler"""
+class ObjDumpx86Disassembler(Disassembler):
+    """x86 objdump disassembler"""
 
-    name: str = "Default Objdump Disassembler (SparcV8 Binutils)"
+    name: str = "x86 Disassembler (x86 Binutils)"
 
     # Expected format: <hex address> <<label+offset>>: <opcode> <interpreted opcode>
     regex: str = r"(\S+)( <(\S+)>|):\s+([\S ]+)\s([\S  ]+)"
@@ -55,7 +55,7 @@ class ObjDumpDisassembler(Disassembler):
             }
         else:
             raise DisassemblerError("Line not processable: \n" + str(str_input))
-
+       
         return result
 
     def parse_function_header(self, line: str) -> str | None:
@@ -146,7 +146,7 @@ class ObjDumpDisassembler(Disassembler):
         """
         Parses optional instruction branch target hint
         """
-        target_match = re.match(r"\s*<([.a-zA-Z_@0-9]+)([+-]0x[0-9a-f]+|[+-][0-9]+)?>(.*)", line)
+        target_match = re.match(r"\s*<([a-zA-Z_@0-9]+)([+-]0x[0-9a-f]+|[+-][0-9]+)?>(.*)", line)
         if target_match is None:
             return None, line
         offset = target_match[2] or "+0"
@@ -187,7 +187,7 @@ class ObjDumpDisassembler(Disassembler):
         address, line = self.parse_address(line)
         if address is None:
             return None
-
+        
         encoding, line = self.parse_encoding(line)
         if not line:
             return encoding
@@ -219,3 +219,7 @@ class ObjDumpDisassembler(Disassembler):
             ops,
             target,
         )
+
+    def parse_jump_target(self, ops: List[str]) -> int | None:
+        # it assumes the first operand to contain the target address
+        return int(ops[-1], 16)

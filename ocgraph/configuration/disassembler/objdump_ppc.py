@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Class for parsing the input"""
+"""Class for parsing the objdump PPC input"""
 
 import re
 from typing import List
@@ -15,10 +15,10 @@ HEX_PATTERN = r"[0-9a-fA-F]+"
 HEX_LONG_PATTERN = r"(?:0x0*)?" + HEX_PATTERN
 
 
-class GdbDisassembler(Disassembler):
-    """x86 GDB disassembler"""
+class ObjDumpPpcDisassembler(Disassembler):
+    """Objdump PPC disassembler"""
 
-    name: str = "Default GDB Disassembler (x86 Binutils)"
+    name: str = "PPC Objdump Disassembler (PPC Binutils)"
 
     # Expected format: <hex address> <<label+offset>>: <opcode> <interpreted opcode>
     regex: str = r"(\S+)( <(\S+)>|):\s+([\S ]+)\s([\S  ]+)"
@@ -55,6 +55,7 @@ class GdbDisassembler(Disassembler):
             }
         else:
             raise DisassemblerError("Line not processable: \n" + str(str_input))
+
         return result
 
     def parse_function_header(self, line: str) -> str | None:
@@ -115,10 +116,10 @@ class GdbDisassembler(Disassembler):
         '50:	f7ff fffe 	bl	0 <__aeabi_dadd>'
         '54:	0002      	movs	r2, r0'
         """
-        # Encoding is separated from assembly mnemonic via tab
-        # so we allow whitespace separators between bytes
+        # Encoding is separated from assembly mnemonic via tab (only in objdump not for llvm-objdump)
+        # so we allow only 1 white space separator between bytes for compatibility with llvm-objdump
         # to avoid accidentally matching the mnemonic.
-        enc_match = re.match(r"^\s*((?:[0-9a-f]{2,8} +)+)(.*)", line)
+        enc_match = re.match(r"^\s*((?:(?:[0-9a-f]{2,8} )+)+)(.*)", line)
         if enc_match is None:
             return None, line
         bites = []
@@ -138,14 +139,14 @@ class GdbDisassembler(Disassembler):
         if opcode_match is None:
             return None, None, None, line
         opcode = opcode_match[1]
-        ops = opcode_match[2].split(",") if opcode_match[2] else []
+        ops = [op.strip() for op in opcode_match[2].split(",")] if opcode_match[2] else []
         return body, opcode, ops, line
 
     def parse_target(self, line: str) -> (Address, str):
         """
         Parses optional instruction branch target hint
         """
-        target_match = re.match(r"\s*<([a-zA-Z_@0-9]+)([+-]0x[0-9a-f]+|[+-][0-9]+)?>(.*)", line)
+        target_match = re.match(r"\s*<([.a-zA-Z_@0-9]+)([+-]0x[0-9a-f]+|[+-][0-9]+)?>(.*)", line)
         if target_match is None:
             return None, line
         offset = target_match[2] or "+0"
@@ -176,7 +177,9 @@ class GdbDisassembler(Disassembler):
         return target, imm_match[3]
 
     def parse_line(self, line: str, lineno, function_name: str) -> Instruction | None:
-        """Parses a single line of assembly to create Instruction instance"""
+        """
+        Parses a single line of assembly to create Instruction instance
+        """
         # Strip GDB prefix and leading whites
         line = line.removeprefix("=> ")
         line = line.lstrip()
@@ -184,6 +187,10 @@ class GdbDisassembler(Disassembler):
         address, line = self.parse_address(line)
         if address is None:
             return None
+
+        encoding, line = self.parse_encoding(line)
+        if not line:
+            return encoding
 
         original_line = line
         body, opcode, ops, line = self.parse_body(line)
@@ -203,7 +210,7 @@ class GdbDisassembler(Disassembler):
         if target is not None and target.base is None:
             target.base = function_name
 
-        return Instruction(
+        instruction = Instruction(
             body,
             original_line.strip(),
             lineno,
@@ -213,5 +220,10 @@ class GdbDisassembler(Disassembler):
             target,
         )
 
-    def parse_jump_target(self, str_input: str) -> int | None:
-        return int(re.search(rf"{HEX_LONG_PATTERN}", str_input)[0], 16)
+        return instruction
+
+    def parse_jump_target(self, ops: List[str]) -> int | None:
+        # it assumes the last operand of the branch to be the target address
+        return int(ops[-1], 16)
+
+
