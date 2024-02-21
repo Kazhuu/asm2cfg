@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: GTDGmbH
 """Module for configuration of the ocgraph package."""
-import logging
+
+from .logger import OcctreLogger, preset_logging
 
 from .architecture.architecture import Architecture
 from .architecture.x86 import X86Architecture
@@ -51,26 +52,6 @@ architecture_option: dict[str, dict] = {
     },
 }
 
-preset_logging: dict[str, dict] = {
-    "development": {
-        "file_log": "debug.log",
-        "file_level": logging.DEBUG,
-        "console_log": True,
-        "console_level": logging.DEBUG,
-    },
-    "module": {
-        "file_log": None,
-        "file_level": logging.ERROR,
-        "console_log": False,
-        "console_level": logging.ERROR,
-    },
-    "default": {
-        "file_log": "asm2cfg.log",
-        "file_level": logging.INFO,
-        "console_log": True,
-        "console_level": logging.INFO,
-    },
-}
 # fmt: on
 
 
@@ -93,15 +74,7 @@ class OcGraphConfiguration:
         self.__dict__ = _preset
 
         # configure logging
-        log_config = preset_logging.get(logging_preset)
-        if log_config["file_log"]:
-            file_stream: logging.FileHandler = logging.FileHandler(log_config["file_log"])
-            file_stream.setLevel(log_config["file_level"])
-            self.logger.addHandler(file_stream)
-        if log_config["console_log"]:
-            console_stream: logging.StreamHandler = logging.StreamHandler()
-            console_stream.setLevel(log_config["console_level"])
-            self.logger.addHandler(console_stream)
+        self.logger = OCGraphLogger("OcGraph", logging_preset, "asm2cfg.log") 
 
     @staticmethod
     def architectures():
