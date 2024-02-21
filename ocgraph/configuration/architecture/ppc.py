@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+# SPDX-License-Identifier: GTDGmbH
 """Contains instruction info for PPC-compatible targets."""
 
 import re

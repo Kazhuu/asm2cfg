@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+# SPDX-License-Identifier: GTDGmbH
 """Contains instruction info for X86-compatible targets."""
 
 import re

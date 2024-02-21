@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+# SPDX-License-Identifier: GTDGmbH
 """Class for read coverage input and update the instruction."""
 import ast
 import csv

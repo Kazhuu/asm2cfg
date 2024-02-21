@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env python
+# SPDX-License-Identifier: GTDGmbH
 
 function_array=(
     acos

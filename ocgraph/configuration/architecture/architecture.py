@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+# SPDX-License-Identifier: GTDGmbH
 """Contains all necessary functions for a TargetInfo class."""
 
 from abc import ABC, abstractmethod
