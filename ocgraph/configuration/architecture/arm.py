@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+# SPDX-License-Identifier: GTDGmbH
 """ Contains instruction info for ARM-compatible targets. """
 
 import re

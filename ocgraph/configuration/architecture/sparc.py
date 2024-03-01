@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+# SPDX-License-Identifier: GTDGmbH
 """Contains instruction info for Sparc-compatible targets."""
 
 from .architecture import Architecture

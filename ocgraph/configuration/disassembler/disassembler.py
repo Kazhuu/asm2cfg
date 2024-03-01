@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: GTDGmbH
-# Copyright 2023 by GTD GmbH.
 """Class configuring the used disassembler tool."""
 
 from abc import ABC, abstractmethod
