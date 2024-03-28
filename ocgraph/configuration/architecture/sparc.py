@@ -76,7 +76,9 @@ class SparcArchitecture(Architecture):
         return instruction.opcode in sparc_v8_call_opcodes
 
     def is_branch(self, instruction: Instruction):
-        return instruction.opcode in (sparc_v8_conditional_branch_opcodes + sparc_v8_unconditional_branch_opcodes)
+        return instruction.opcode in (
+            sparc_v8_conditional_branch_opcodes + sparc_v8_unconditional_branch_opcodes
+        )
 
     def get_branch_delay(self, instruction: Instruction) -> int | None:
         delay = None

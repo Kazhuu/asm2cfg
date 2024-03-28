@@ -9,8 +9,8 @@ from ...data.instruction import Instruction
 
 
 # Common regexes
-HEX_PATTERN = r'[0-9a-fA-F]+'
-HEX_LONG_PATTERN = r'(?:0x0*)?' + HEX_PATTERN
+HEX_PATTERN = r"[0-9a-fA-F]+"
+HEX_LONG_PATTERN = r"(?:0x0*)?" + HEX_PATTERN
 
 # fmt: off
 ppc_call_opcodes = [
@@ -697,7 +697,9 @@ class PpcArchitecture(Architecture):
         return instruction.opcode in ppc_call_opcodes
 
     def is_branch(self, instruction: Instruction):
-        return instruction.opcode in (ppc_conditional_branch_opcodes + ppc_unconditional_branch_opcodes) and not self.is_call(instruction)
+        return instruction.opcode in (
+            ppc_conditional_branch_opcodes + ppc_unconditional_branch_opcodes
+        ) and not self.is_call(instruction)
 
     def is_unconditional_branch(self, instruction: Instruction):
         return instruction.opcode in ppc_unconditional_branch_opcodes
@@ -706,4 +708,6 @@ class PpcArchitecture(Architecture):
         return instruction.opcode in ppc_sink_opcodes
 
     def is_direct_branch(self, instruction: Instruction):
-        return self.is_branch(instruction) and (re.search(rf"{HEX_LONG_PATTERN}", '|'.join(instruction.ops)))
+        return self.is_branch(instruction) and (
+            re.search(rf"{HEX_LONG_PATTERN}", "|".join(instruction.ops))
+        )

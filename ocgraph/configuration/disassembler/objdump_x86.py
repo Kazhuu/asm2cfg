@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Class for parsing the input"""
 
 import re
@@ -55,7 +54,7 @@ class ObjDumpx86Disassembler(Disassembler):
             }
         else:
             raise DisassemblerError("Line not processable: \n" + str(str_input))
-       
+
         return result
 
     def parse_function_header(self, line: str) -> str | None:
@@ -187,7 +186,7 @@ class ObjDumpx86Disassembler(Disassembler):
         address, line = self.parse_address(line)
         if address is None:
             return None
-        
+
         encoding, line = self.parse_encoding(line)
         if not line:
             return encoding

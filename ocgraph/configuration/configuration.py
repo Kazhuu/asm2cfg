@@ -74,7 +74,7 @@ class OcGraphConfiguration:
         self.__dict__ = _preset
 
         # configure logging
-        self.logger = OCGraphLogger("OcGraph", logging_preset, "asm2cfg.log") 
+        self.logger = OCGraphLogger("OcGraph", logging_preset, "asm2cfg.log")
 
     @staticmethod
     def architectures():

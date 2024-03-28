@@ -11,45 +11,56 @@ from common import set_basename, gcc, disasm, grep, strip_binary, find_address
 
 set_basename(os.path.basename(__file__))
 
-for gdb, pic, strip in itertools.product([False, True],
-                                         [False, True],  # Do we need to test PIE too?
-                                         [False, True]):
+for gdb, pic, strip in itertools.product(
+    [False, True], [False, True], [False, True]  # Do we need to test PIE too?
+):
     # Print config
 
-    disasm_type = 'GDB' if gdb else 'objdump'
-    pic_type = 'position-INdependent' if pic else 'position-dependent'
-    stripped = 'stripped' if strip else 'UNstripped'
-    print(f'Checking {disasm_type} {pic_type} {stripped}')
+    disasm_type = "GDB" if gdb else "objdump"
+    pic_type = "position-INdependent" if pic else "position-dependent"
+    stripped = "stripped" if strip else "UNstripped"
+    print(f"Checking {disasm_type} {pic_type} {stripped}")
 
     # Generate object code
 
-    flags = ['funtable.c', '-o', 'a.out',
-             '-Wl,--defsym,_start=0', '-nostdlib', '-nostartfiles', '-O2']
+    flags = [
+        "funtable.c",
+        "-o",
+        "a.out",
+        "-Wl,--defsym,_start=0",
+        "-nostdlib",
+        "-nostartfiles",
+        "-O2",
+    ]
     # DLL or executable?
     if pic:
-        flags += ['-fPIC', '-shared']
+        flags += ["-fPIC", "-shared"]
     # Include debuginfo?
     if not strip:
-        flags.append('-g')
+        flags.append("-g")
 
     gcc(flags)
 
     # Strip
 
-    caller = 'bar'
-    start, finish = find_address('a.out', caller)
+    caller = "bar"
+    start, finish = find_address("a.out", caller)
     if strip:
-        strip_binary('a.out')
+        strip_binary("a.out")
         caller = None
 
     # Generate disasm
 
-    out = disasm('a.out', not gdb, caller, start, finish)
+    out = disasm("a.out", not gdb, caller, start, finish)
 
     # Print snippets
 
-    jumps = grep(out, r'\bcall')
-    print('''\
+    jumps = grep(out, r"\bcall")
+    print(
+        """\
   table calls:
     {}
-'''.format('\n    '.join(jumps)))
+""".format(
+            "\n    ".join(jumps)
+        )
+    )

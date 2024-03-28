@@ -225,5 +225,3 @@ class ObjDumpPpcDisassembler(Disassembler):
     def parse_jump_target(self, ops: List[str]) -> int | None:
         # it assumes the last operand of the branch to be the target address
         return int(ops[-1], 16)
-
-

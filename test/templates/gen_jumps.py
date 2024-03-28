@@ -11,46 +11,48 @@ from common import set_basename, gcc, disasm, grep, strip_binary, find_address
 
 set_basename(os.path.basename(__file__))
 
-for gdb, pic, opt, strip in itertools.product([False, True],
-                                              [False, True],  # Do we need to test PIE too?
-                                              [False, True],
-                                              [False, True]):
+for gdb, pic, opt, strip in itertools.product(
+    [False, True], [False, True], [False, True], [False, True]  # Do we need to test PIE too?
+):
     # Print config
 
-    disasm_type = 'GDB' if gdb else 'objdump'
-    pic_type = 'position-INdependent' if pic else 'position-dependent'
-    opt_type = 'optimized' if opt else 'UNoptimized'
-    stripped = 'stripped' if strip else 'UNstripped'
-    print(f'Checking {disasm_type} {pic_type} {opt_type} {stripped}')
+    disasm_type = "GDB" if gdb else "objdump"
+    pic_type = "position-INdependent" if pic else "position-dependent"
+    opt_type = "optimized" if opt else "UNoptimized"
+    stripped = "stripped" if strip else "UNstripped"
+    print(f"Checking {disasm_type} {pic_type} {opt_type} {stripped}")
 
     # Generate object code
 
-    flags = ['jump.c', '-o', 'a.out',
-             '-Wl,--defsym,_start=0', '-nostdlib', '-nostartfiles']
+    flags = ["jump.c", "-o", "a.out", "-Wl,--defsym,_start=0", "-nostdlib", "-nostartfiles"]
     # DLL or executable?
     if pic:
-        flags += ['-fPIC', '-shared']
+        flags += ["-fPIC", "-shared"]
     if opt:
-        flags.append('-O2')
+        flags.append("-O2")
 
     gcc(flags)
 
     # Strip
 
-    caller = 'bar'
-    start, finish = find_address('a.out', caller)
+    caller = "bar"
+    start, finish = find_address("a.out", caller)
     if strip:
-        strip_binary('a.out')
+        strip_binary("a.out")
         caller = None
 
     # Generate disasm
 
-    out = disasm('a.out', not gdb, caller, start, finish)
+    out = disasm("a.out", not gdb, caller, start, finish)
 
     # Print snippets
 
-    jumps = grep(out, r'\bj')
-    print('''\
+    jumps = grep(out, r"\bj")
+    print(
+        """\
   jumps:
     {}
-'''.format('\n    '.join(jumps)))
+""".format(
+            "\n    ".join(jumps)
+        )
+    )

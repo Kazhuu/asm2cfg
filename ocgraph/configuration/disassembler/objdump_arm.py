@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Class for parsing the objdump ARM input"""
 
 import re

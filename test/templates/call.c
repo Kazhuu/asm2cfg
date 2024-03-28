@@ -5,6 +5,4 @@ __attribute__((visibility("hidden")))
 void foo() {
 }
 
-void bar() {
-  foo();
-}
+void bar() { foo(); }
