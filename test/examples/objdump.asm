@@ -1,5 +1,5 @@
 0000000000016bb0 <_obstack_allocated_p@@Base>:
-   16bb0:	f3 0f 1e fa          	endbr64 
+   16bb0:	f3 0f 1e fa          	endbr64
    16bb4:	48 8b 47 08          	mov    0x8(%rdi),%rax
    16bb8:	48 85 c0             	test   %rax,%rax
    16bbb:	74 29                	je     16be6 <_obstack_allocated_p@@Base+0x36>
@@ -12,11 +12,11 @@
    16bce:	48 85 c0             	test   %rax,%rax
    16bd1:	75 ed                	jne    16bc0 <_obstack_allocated_p@@Base+0x10>
    16bd3:	31 c0                	xor    %eax,%eax
-   16bd5:	c3                   	retq   
+   16bd5:	c3                   	retq
    16bd6:	66 2e 0f 1f 84 00 00 	nopw   %cs:0x0(%rax,%rax,1)
-   16bdd:	00 00 00 
+   16bdd:	00 00 00
    16be0:	b8 01 00 00 00       	mov    $0x1,%eax
-   16be5:	c3                   	retq   
-   16be6:	c3                   	retq   
+   16be5:	c3                   	retq
+   16be6:	c3                   	retq
    16be7:	66 0f 1f 84 00 00 00 	nopw   0x0(%rax,%rax,1)
-   16bee:	00 00 
+   16bee:	00 00

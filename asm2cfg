@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# SPDX-License-Identifier: GTDGmbH
+# Copyright 2023 by GTD GmbH.
+
+dir="$(dirname "$(readlink -f "$0")")"
+cd $dir
+export PATH=$dir/bin:$PATH
+if [ -d "venv" ]; then
+    . venv/bin/activate
+fi
+python3 -m ocgraph.__main__ "$@"

@@ -24,3 +24,6 @@ coverage.xml
 # Test files
 a.out
 main.pdf
+
+# Log files
+*.log

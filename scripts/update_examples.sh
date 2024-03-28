@@ -9,6 +9,6 @@ for asm in examples/*.asm; do
   if echo $asm | grep -q 'arm.asm'; then
     flags="$flags --target arm"
   fi
-  pdf=$(python3 -m src.asm2cfg $flags -c $asm | awk '/Saved CFG/{print $NF}')
+  pdf=$(python3 -m ocgraph $flags -c $asm | awk '/Saved CFG/{print $NF}')
   mv $pdf $(echo $asm | sed 's/\.asm/\.pdf/')
 done
